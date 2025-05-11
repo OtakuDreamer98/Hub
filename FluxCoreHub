@@ -23,10 +23,10 @@ local function ApplyStyle(obj, radius)
     stroke.Color = Color3.fromRGB(40, 40, 40)
 end
 
--- Toggle Button (top-right corner)
+-- Toggle Button (Left center and draggable)
 local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(0, 50, 0, 40)
-ToggleButton.Position = UDim2.new(1, -60, 0, 10)
+ToggleButton.Size = UDim2.new(0, 50, 0, 50)
+ToggleButton.Position = UDim2.new(0, 10, 0.5, -25)
 ToggleButton.AnchorPoint = Vector2.new(0, 0)
 ToggleButton.Text = "F"
 ToggleButton.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
@@ -37,9 +37,38 @@ ToggleButton.ZIndex = 10
 ToggleButton.Parent = Gui
 ApplyStyle(ToggleButton, 6)
 
+-- Make Toggle Button draggable (Mobile support)
+local dragging = false
+local dragInput, dragStart, startPos
+
+ToggleButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = ToggleButton.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        ToggleButton.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
 local MainVisible = false
 
--- Animation function
 local function AnimateWindow(window, show)
     local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
@@ -83,7 +112,6 @@ function Library:MakeWindow(config)
     MainFrame.BorderSizePixel = 0
     MainFrame.Name = config.Name or "Window"
     MainFrame.Active = true
-    MainFrame.Draggable = true
     MainFrame.Visible = false
     MainFrame.Parent = Gui
     ApplyStyle(MainFrame, 10)
@@ -109,6 +137,7 @@ function Library:MakeWindow(config)
     SideBarScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
     SideBarScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
     SideBarScroll.ClipsDescendants = true
+    SideBarScroll.ScrollingDirection = Enum.ScrollingDirection.Y
     ApplyStyle(SideBarScroll)
 
     local TabButtonLayout = Instance.new("UIListLayout", SideBarScroll)
