@@ -23,18 +23,21 @@ local function ApplyStyle(obj, radius)
 	stroke.Color = Color3.fromRGB(40, 40, 40)
 end
 
--- Toggle Button
+-- Toggle Button (center-left, perfect square, draggable)
 local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(0, 50, 0, 40)
-ToggleButton.Position = UDim2.new(0, 10, 0, 10) -- Left side
+ToggleButton.Size = UDim2.new(0, 50, 0, 50) -- Perfect square
+ToggleButton.Position = UDim2.new(0, 20, 0.5, -25) -- Center-left of screen
 ToggleButton.Text = "F"
-ToggleButton.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 ToggleButton.TextColor3 = Color3.new(1, 1, 1)
-ToggleButton.Font = Enum.Font.GothamBold
-ToggleButton.TextSize = 24
+ToggleButton.Font = Enum.Font.GothamBlack
+ToggleButton.TextSize = 20
 ToggleButton.ZIndex = 10
 ToggleButton.Parent = Gui
-ApplyStyle(ToggleButton, 6)
+ApplyStyle(ToggleButton, 8)
+
+-- Draggable on both PC and mobile
+MakeDraggable(ToggleButton)
 
 -- Draggable Function (Mobile + PC)
 local function MakeDraggable(frame)
