@@ -38,8 +38,6 @@ ApplyStyle(ToggleButton, 8)
 
 -- Draggable on both PC and mobile
 MakeDraggable(ToggleButton)
-
--- Draggable Function (Mobile + PC)
 local function MakeDraggable(frame)
 	local dragging = false
 	local dragInput, dragStart, startPos
