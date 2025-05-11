@@ -1,4 +1,4 @@
--- DemonLib GUI Framework (Improved with Tab Toggle & Hub Toggle)
+-- Fluxcore.Hub GUI Framework (Improved)
 local Library = {}
 
 local Players = game:GetService("Players")
@@ -6,7 +6,7 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 local Gui = Instance.new("ScreenGui")
-Gui.Name = "DemonLib"
+Gui.Name = "Fluxcore.Hub"
 Gui.ResetOnSpawn = false
 Gui.Parent = PlayerGui
 
@@ -20,18 +20,18 @@ local function ApplyStyle(obj, radius)
 	stroke.Color = Color3.fromRGB(80, 80, 80)
 end
 
--- Hub Toggle Button
+-- Square Toggle Button with letter "F"
 local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(0, 80, 0, 25)
-ToggleButton.Position = UDim2.new(0.5, -40, 0, 10)
+ToggleButton.Size = UDim2.new(0, 30, 0, 30)
+ToggleButton.Position = UDim2.new(0.5, -15, 0, 10)
 ToggleButton.AnchorPoint = Vector2.new(0.5, 0)
-ToggleButton.Text = "Toggle Hub"
-ToggleButton.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+ToggleButton.Text = "F"
+ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 ToggleButton.TextColor3 = Color3.new(1, 1, 1)
 ToggleButton.Font = Enum.Font.GothamBold
-ToggleButton.TextSize = 12
+ToggleButton.TextSize = 18
 ToggleButton.Parent = Gui
-ApplyStyle(ToggleButton, 6)
+ApplyStyle(ToggleButton, 4)
 
 local MainVisible = true
 ToggleButton.MouseButton1Click:Connect(function()
@@ -58,7 +58,7 @@ function Library:MakeWindow(config)
 
 	local TopBar = Instance.new("TextLabel", MainFrame)
 	TopBar.Size = UDim2.new(1, 0, 0, 40)
-	TopBar.Text = config.Name or "Demon Window"
+	TopBar.Text = config.Name or "Fluxcore Window"
 	TopBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 	TopBar.TextColor3 = Color3.new(1, 1, 1)
 	TopBar.Font = Enum.Font.GothamBold
@@ -68,7 +68,6 @@ function Library:MakeWindow(config)
 
 	local Tabs = {}
 	local CurrentTab
-	local CurrentTabButton
 
 	function Window:MakeTab(info)
 		local Tab = {}
@@ -99,14 +98,12 @@ function Library:MakeWindow(config)
 			if CurrentTab == Content then
 				Content.Visible = false
 				CurrentTab = nil
-				CurrentTabButton = nil
 			else
 				if CurrentTab then
 					CurrentTab.Visible = false
 				end
 				Content.Visible = true
 				CurrentTab = Content
-				CurrentTabButton = TabButton
 			end
 		end
 
@@ -173,7 +170,7 @@ function Library:MakeNotification(data)
 end
 
 function Library:Init()
-	print("DemonLib Initialized")
+	print("Fluxcore.Hub Initialized")
 end
 
 function Library:Destroy()
