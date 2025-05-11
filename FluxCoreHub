@@ -1,23 +1,25 @@
+-- Fluxcore.Hub GUI Framework (Left-Side Tabs + Content Right, Black Theme)
 local Library = {}
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
-local TweenService = game:GetService("TweenService")
 
+local TweenService = game:GetService("TweenService")
 local Gui = Instance.new("ScreenGui")
 Gui.Name = "Fluxcore.Hub"
 Gui.ResetOnSpawn = false
 Gui.Parent = PlayerGui
 
 local Windows = {}
+local AnimationTime = 0.3
 
 local function ApplyStyle(obj, radius)
-    local corner = Instance.new("UICorner", obj)
-    corner.CornerRadius = UDim.new(0, radius or 6)
-    local stroke = Instance.new("UIStroke", obj)
-    stroke.Thickness = 1
-    stroke.Color = Color3.fromRGB(40, 40, 40)
+	local corner = Instance.new("UICorner", obj)
+	corner.CornerRadius = UDim.new(0, radius or 6)
+	local stroke = Instance.new("UIStroke", obj)
+	stroke.Thickness = 1
+	stroke.Color = Color3.fromRGB(40, 40, 40)
 end
 
 -- Toggle Button
@@ -29,299 +31,317 @@ ToggleButton.Text = "F"
 ToggleButton.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
 ToggleButton.TextColor3 = Color3.new(1, 1, 1)
 ToggleButton.Font = Enum.Font.GothamBold
-ToggleButton.TextSize = 20  -- Increased size
+ToggleButton.TextSize = 20
 ToggleButton.Parent = Gui
 ApplyStyle(ToggleButton, 4)
 
 local MainVisible = true
 ToggleButton.MouseButton1Click:Connect(function()
-    MainVisible = not MainVisible
-    for _, window in ipairs(Windows) do
-        if MainVisible then
-            -- Animate opening
-            local leftTween = TweenService:Create(window.SideBar, TweenInfo.new(0.5), {Size = UDim2.new(0, 100, 1, -40)})
-            local rightTween = TweenService:Create(window.ContentArea, TweenInfo.new(0.5), {Size = UDim2.new(1, -100, 1, -40)})
-            leftTween:Play()
-            rightTween:Play()
-        else
-            -- Animate closing
-            local leftTween = TweenService:Create(window.SideBar, TweenInfo.new(0.5), {Size = UDim2.new(0, 0, 1, -40)})
-            local rightTween = TweenService:Create(window.ContentArea, TweenInfo.new(0.5), {Size = UDim2.new(1, 0, 1, -40)})
-            leftTween:Play()
-            rightTween:Play()
-        end
-    end
+	if MainVisible then
+		for _, window in ipairs(Windows) do
+			local leftSide = window:FindFirstChildWhichIsA("Frame")
+			local rightSide = window:FindFirstChild("ContentArea")
+			if leftSide and rightSide then
+				TweenService:Create(leftSide, TweenInfo.new(AnimationTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+					Position = UDim2.new(0.5, -leftSide.Size.X.Offset / 2, 0, leftSide.Position.Y.Offset)
+				}):Play()
+
+				TweenService:Create(rightSide, TweenInfo.new(AnimationTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+					Position = UDim2.new(0.5, -rightSide.Size.X.Offset / 2, 0, rightSide.Position.Y.Offset)
+				}):Play()
+			end
+			task.delay(AnimationTime, function()
+				window.Visible = false
+			end)
+		end
+	else
+		for _, window in ipairs(Windows) do
+			window.Visible = true
+			local leftSide = window:FindFirstChildWhichIsA("Frame")
+			local rightSide = window:FindFirstChild("ContentArea")
+			if leftSide and rightSide then
+				TweenService:Create(leftSide, TweenInfo.new(AnimationTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+					Position = UDim2.new(0, 0, 0, 40)
+				}):Play()
+
+				TweenService:Create(rightSide, TweenInfo.new(AnimationTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+					Position = UDim2.new(0, 100, 0, 40)
+				}):Play()
+			end
+		end
+	end
+	MainVisible = not MainVisible
 end)
 
 function Library:MakeWindow(config)
-    local Window = {}
-    local MainFrame = Instance.new("Frame")
-    MainFrame.Size = UDim2.new(0, 600, 0, 350)
-    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -175)
-    MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-    MainFrame.BorderSizePixel = 0
-    MainFrame.Name = config.Name or "Window"
-    MainFrame.Active = true
-    MainFrame.Draggable = true
-    MainFrame.Parent = Gui
-    ApplyStyle(MainFrame, 10)
+	local Window = {}
+	local MainFrame = Instance.new("Frame")
+	MainFrame.Size = UDim2.new(0, 600, 0, 350)
+	MainFrame.Position = UDim2.new(0.5, -300, 0.5, -175)
+	MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+	MainFrame.BorderSizePixel = 0
+	MainFrame.Name = config.Name or "Window"
+	MainFrame.Active = true
+	MainFrame.Draggable = true
+	MainFrame.Parent = Gui
+	ApplyStyle(MainFrame, 10)
 
-    table.insert(Windows, MainFrame)
+	table.insert(Windows, MainFrame)
 
-    local TopBar = Instance.new("TextLabel", MainFrame)
-    TopBar.Size = UDim2.new(1, 0, 0, 40)
-    TopBar.Text = config.Name or "Fluxcore Window"
-    TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-    TopBar.TextColor3 = Color3.new(1, 1, 1)
-    TopBar.Font = Enum.Font.GothamBold
-    TopBar.TextSize = 22  -- Increased size for better visibility
-    TopBar.BorderSizePixel = 0
-    ApplyStyle(TopBar)
+	local TopBar = Instance.new("TextLabel", MainFrame)
+	TopBar.Size = UDim2.new(1, 0, 0, 40)
+	TopBar.Text = config.Name or "Fluxcore Window"
+	TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+	TopBar.TextColor3 = Color3.new(1, 1, 1)
+	TopBar.Font = Enum.Font.GothamBold
+	TopBar.TextSize = 22
+	TopBar.BorderSizePixel = 0
+	ApplyStyle(TopBar)
 
-    local SideBar = Instance.new("Frame", MainFrame)
-    SideBar.Size = UDim2.new(0, 100, 1, -40)
-    SideBar.Position = UDim2.new(0, 0, 0, 40)
-    SideBar.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
-    SideBar.BorderSizePixel = 0
+	local SideBar = Instance.new("Frame", MainFrame)
+	SideBar.Size = UDim2.new(0, 100, 1, -40)
+	SideBar.Position = UDim2.new(0, 0, 0, 40)
+	SideBar.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
+	SideBar.BorderSizePixel = 0
+	ApplyStyle(SideBar)
+	
+	local TabButtonLayout = Instance.new("UIListLayout", SideBar)
+	TabButtonLayout.Padding = UDim.new(0, 5)
+	TabButtonLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
-    local TabButtonLayout = Instance.new("UIListLayout", SideBar)
-    TabButtonLayout.Padding = UDim.new(0, 5)
-    TabButtonLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	local ContentArea = Instance.new("Frame", MainFrame)
+	ContentArea.Name = "ContentArea"
+	ContentArea.Size = UDim2.new(1, -100, 1, -40)
+	ContentArea.Position = UDim2.new(0, 100, 0, 40)
+	ContentArea.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
+	ContentArea.BorderSizePixel = 0
+	ApplyStyle(ContentArea)
 
-    local ContentArea = Instance.new("Frame", MainFrame)
-    ContentArea.Size = UDim2.new(1, -100, 1, -40)
-    ContentArea.Position = UDim2.new(0, 100, 0, 40)
-    ContentArea.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
-    ContentArea.BorderSizePixel = 0
-    ApplyStyle(ContentArea)
+	local Tabs = {}
+	local CurrentTab
 
-    local Tabs = {}
-    local CurrentTab
+	function Window:MakeTab(info)
+		local Tab = {}
+		local TabButton = Instance.new("TextButton", SideBar)
+		TabButton.Size = UDim2.new(1, 0, 0, 30)
+		TabButton.Text = info.Name or "Tab"
+		TabButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+		TabButton.TextColor3 = Color3.new(1, 1, 1)
+		TabButton.Font = Enum.Font.GothamBold
+		TabButton.TextSize = 16
+		ApplyStyle(TabButton)
 
-    function Window:MakeTab(info)
-        local Tab = {}
-        local TabButton = Instance.new("TextButton", SideBar)
-        TabButton.Size = UDim2.new(1, 0, 0, 30)
-        TabButton.Text = info.Name or "Tab"
-        TabButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-        TabButton.TextColor3 = Color3.new(1, 1, 1)
-        TabButton.Font = Enum.Font.GothamBold  -- Bold font for better visibility
-        TabButton.TextSize = 16  -- Increased size
-        ApplyStyle(TabButton)
+		local Content = Instance.new("ScrollingFrame", ContentArea)
+		Content.Size = UDim2.new(1, -10, 1, -10)
+		Content.Position = UDim2.new(0, 5, 0, 5)
+		Content.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+		Content.BorderSizePixel = 0
+		Content.Visible = false
+		Content.CanvasSize = UDim2.new(0, 0, 2, 0)
+		Content.ScrollBarThickness = 6
+		ApplyStyle(Content)
 
-        local Content = Instance.new("ScrollingFrame", ContentArea)
-        Content.Size = UDim2.new(1, -10, 1, -10)
-        Content.Position = UDim2.new(0, 5, 0, 5)
-        Content.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-        Content.BorderSizePixel = 0
-        Content.Visible = false
-        Content.CanvasSize = UDim2.new(0, 0, 2, 0)
-        Content.ScrollBarThickness = 6
-        ApplyStyle(Content)
+		local layout = Instance.new("UIListLayout", Content)
+		layout.Padding = UDim.new(0, 6)
+		layout.SortOrder = Enum.SortOrder.LayoutOrder
 
-        local layout = Instance.new("UIListLayout", Content)
-        layout.Padding = UDim.new(0, 6)
-        layout.SortOrder = Enum.SortOrder.LayoutOrder
+		local padding = Instance.new("UIPadding", Content)
+		padding.PaddingLeft = UDim.new(0, 5)
+		padding.PaddingRight = UDim.new(0, 5)
+		padding.PaddingTop = UDim.new(0, 5)
+		padding.PaddingBottom = UDim.new(0, 5)
 
-        local padding = Instance.new("UIPadding", Content)
-        padding.PaddingLeft = UDim.new(0, 5)
-        padding.PaddingRight = UDim.new(0, 5)
-        padding.PaddingTop = UDim.new(0, 5)
-        padding.PaddingBottom = UDim.new(0, 5)
+		function Tab:Show()
+			if CurrentTab == Content then
+				Content.Visible = false
+				TabButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+				CurrentTab = nil
+			else
+				if CurrentTab then
+					CurrentTab.Visible = false
+				end
+				for _, t in pairs(Tabs) do
+					t.Button.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+				end
+				Content.Visible = true
+				TabButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+				CurrentTab = Content
+			end
+		end
 
-        function Tab:Show()
-            if CurrentTab == Content then
-                Content.Visible = false
-                TabButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-                CurrentTab = nil
-            else
-                if CurrentTab then
-                    CurrentTab.Visible = false
-                end
-                for _, t in pairs(Tabs) do
-                    t.Button.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-                end
-                Content.Visible = true
-                TabButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-                CurrentTab = Content
-            end
-        end
+		TabButton.MouseButton1Click:Connect(function()
+			Tab:Show()
+		end)
 
-        TabButton.MouseButton1Click:Connect(function()
-            Tab:Show()
-        end)
+		function Tab:AddButton(opts)
+			local btn = Instance.new("TextButton", Content)
+			btn.Size = UDim2.new(1, 0, 0, 30)
+			btn.Text = opts.Name or "Button"
+			btn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+			btn.TextColor3 = Color3.new(1, 1, 1)
+			btn.Font = Enum.Font.GothamBold
+			btn.TextSize = 16
+			ApplyStyle(btn)
+			btn.MouseButton1Click:Connect(opts.Callback)
+		end
 
-        function Tab:AddButton(opts)
-            local btn = Instance.new("TextButton", Content)
-            btn.Size = UDim2.new(1, 0, 0, 30)
-            btn.Text = opts.Name or "Button"
-            btn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-            btn.TextColor3 = Color3.new(1, 1, 1)
-            btn.Font = Enum.Font.GothamBold  -- Bold font for buttons
-            btn.TextSize = 16  -- Increased size
-            ApplyStyle(btn)
-            btn.MouseButton1Click:Connect(opts.Callback)
-        end
+		function Tab:AddLabel(txt)
+			local lbl = Instance.new("TextLabel", Content)
+			lbl.Size = UDim2.new(1, 0, 0, 30)
+			lbl.Text = txt
+			lbl.BackgroundTransparency = 1
+			lbl.TextColor3 = Color3.new(1, 1, 1)
+			lbl.Font = Enum.Font.GothamBold
+			lbl.TextSize = 20
+		end
 
-        function Tab:AddLabel(txt)
-            local lbl = Instance.new("TextLabel", Content)
-            lbl.Size = UDim2.new(1, 0, 0, 30)
-            lbl.Text = txt
-            lbl.BackgroundTransparency = 1
-            lbl.TextColor3 = Color3.new(1, 1, 1)
-            lbl.Font = Enum.Font.GothamBold  -- Bold for labels
-            lbl.TextSize = 20  -- Increased size for better readability
-        end
+		function Tab:AddTextbox(opts)
+			local box = Instance.new("TextBox", Content)
+			box.Size = UDim2.new(1, 0, 0, 30)
+			box.Text = opts.Default or ""
+			box.ClearTextOnFocus = opts.TextDisappear or false
+			box.TextColor3 = Color3.new(1, 1, 1)
+			box.Font = Enum.Font.Code
+			box.TextSize = 16
+			box.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+			ApplyStyle(box)
+			box.FocusLost:Connect(function()
+				opts.Callback(box.Text)
+			end)
+		end
 
-        function Tab:AddTextbox(opts)
-            local box = Instance.new("TextBox", Content)
-            box.Size = UDim2.new(1, 0, 0, 30)
-            box.Text = opts.Default or ""
-            box.ClearTextOnFocus = opts.TextDisappear or false
-            box.TextColor3 = Color3.new(1, 1, 1)
-            box.Font = Enum.Font.Code
-            box.TextSize = 16  -- Increased size for better readability
-            box.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-            ApplyStyle(box)
-            box.FocusLost:Connect(function()
-                opts.Callback(box.Text)
-            end)
-        end
+		function Tab:AddSlider(opts)
+			local sliderFrame = Instance.new("Frame", Content)
+			sliderFrame.Size = UDim2.new(1, 0, 0, 40)
+			sliderFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+			ApplyStyle(sliderFrame)
 
-        function Tab:AddSlider(opts)
-            local sliderFrame = Instance.new("Frame", Content)
-            sliderFrame.Size = UDim2.new(1, 0, 0, 40)
-            sliderFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-            ApplyStyle(sliderFrame)
+			local titleLabel = Instance.new("TextLabel", sliderFrame)
+			titleLabel.Size = UDim2.new(0, 100, 1, 0)
+			titleLabel.Position = UDim2.new(0, 5, 0, 0)
+			titleLabel.Text = opts.Name or "Slider"
+			titleLabel.BackgroundTransparency = 1
+			titleLabel.TextColor3 = Color3.new(1, 1, 1)
+			titleLabel.Font = Enum.Font.GothamBold
+			titleLabel.TextSize = 16
+			titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-            local titleLabel = Instance.new("TextLabel", sliderFrame)          
-            titleLabel.Size = UDim2.new(0, 100, 1, 0)          
-            titleLabel.Position = UDim2.new(0, 5, 0, 0)          
-            titleLabel.Text = opts.Name or "Slider"          
-            titleLabel.BackgroundTransparency = 1          
-            titleLabel.TextColor3 = Color3.new(1, 1, 1)          
-            titleLabel.Font = Enum.Font.GothamBold          
-            titleLabel.TextSize = 16  -- Increased size for better visibility      
-            titleLabel.TextXAlignment = Enum.TextXAlignment.Left          
+			local sliderBar = Instance.new("Frame", sliderFrame)
+			sliderBar.Size = UDim2.new(1, -120, 0, 6)
+			sliderBar.Position = UDim2.new(0, 110, 0.5, -3)
+			sliderBar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+			sliderBar.BorderSizePixel = 0
+			ApplyStyle(sliderBar, 3)
 
-            local sliderBar = Instance.new("Frame", sliderFrame)          
-            sliderBar.Size = UDim2.new(1, -120, 0, 6)          
-            sliderBar.Position = UDim2.new(0, 110, 0.5, -3)          
-            sliderBar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)          
-            sliderBar.BorderSizePixel = 0          
-            ApplyStyle(sliderBar, 3)          
+			local fill = Instance.new("Frame", sliderBar)
+			fill.Size = UDim2.new(0, 0, 1, 0)
+			fill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+			fill.BorderSizePixel = 0
+			ApplyStyle(fill, 3)
 
-            local fill = Instance.new("Frame", sliderBar)          
-            fill.Size = UDim2.new(0, 0, 1, 0)          
-            fill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)          
-            fill.BorderSizePixel = 0          
-            ApplyStyle(fill, 3)          
+			local value = opts.Default or opts.Min or 0
+			local dragging = false
 
-            local value = opts.Default or opts.Min or 0          
-            local dragging = false          
+			local function updateValue(inputX)
+				local relative = math.clamp((inputX - sliderBar.AbsolutePosition.X) / sliderBar.AbsoluteSize.X, 0, 1)
+				value = math.floor((opts.Min + (opts.Max - opts.Min) * relative) * 100) / 100
+				fill.Size = UDim2.new(relative, 0, 1, 0)
+				if opts.Callback then
+					opts.Callback(value)
+				end
+			end
 
-            local function updateValue(inputX)          
-                local relative = math.clamp((inputX - sliderBar.AbsolutePosition.X) / sliderBar.AbsoluteSize.X, 0, 1)          
-                value = math.floor((opts.Min + (opts.Max - opts.Min) * relative) * 100) / 100          
-                fill.Size = UDim2.new(relative, 0, 1, 0)          
-                if opts.Callback then          
-                    opts.Callback(value)          
-                end          
-            end          
+			sliderBar.InputBegan:Connect(function(input)
+				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+					dragging = true
+					updateValue(input.Position.X)
+				end
+			end)
 
-            sliderBar.InputBegan:Connect(function(input)          
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then          
-                    dragging = true          
-                    updateValue(input.Position.X)          
-                end          
-            end)          
+			game:GetService("UserInputService").InputChanged:Connect(function(input)
+				if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+					updateValue(input.Position.X)
+				end
+			end)
 
-            game:GetService("UserInputService").InputChanged:Connect(function(input)          
-                if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then          
-                    updateValue(input.Position.X)          
-                end          
-            end)          
+			game:GetService("UserInputService").InputEnded:Connect(function(input)
+				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+					dragging = false
+				end
+			end)
+		end
 
-            game:GetService("UserInputService").InputEnded:Connect(function(input)          
-                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then          
-                    dragging = false          
-                end          
-            end)
+		function Tab:AddToggle(opts)
+			local toggleFrame = Instance.new("Frame", Content)
+			toggleFrame.Size = UDim2.new(1, 0, 0, 30)
+			toggleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+			toggleFrame.BorderSizePixel = 0
+			ApplyStyle(toggleFrame)
 
-        end
+			local toggleButton = Instance.new("TextButton", toggleFrame)
+			toggleButton.Size = UDim2.new(1, 0, 1, 0)
+			toggleButton.BackgroundTransparency = 1
+			toggleButton.Text = opts.Name or "Toggle"
+			toggleButton.TextColor3 = Color3.new(1, 1, 1)
+			toggleButton.Font = Enum.Font.GothamBold
+			toggleButton.TextSize = 16
+			toggleButton.TextXAlignment = Enum.TextXAlignment.Left
 
-        function Tab:AddToggle(opts)
-            local toggleFrame = Instance.new("Frame", Content)
-            toggleFrame.Size = UDim2.new(1, 0, 0, 30)
-            toggleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-            toggleFrame.BorderSizePixel = 0
-            ApplyStyle(toggleFrame)
+			local toggleIndicator = Instance.new("Frame", toggleFrame)
+			toggleIndicator.Size = UDim2.new(0, 20, 0, 20)
+			toggleIndicator.Position = UDim2.new(1, -25, 0.5, -10)
+			toggleIndicator.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+			ApplyStyle(toggleIndicator, 4)
 
-            local toggleButton = Instance.new("TextButton", toggleFrame)        
-            toggleButton.Size = UDim2.new(1, 0, 1, 0)        
-            toggleButton.BackgroundTransparency = 1        
-            toggleButton.Text = opts.Name or "Toggle"        
-            toggleButton.TextColor3 = Color3.new(1, 1, 1)        
-            toggleButton.Font = Enum.Font.GothamBold        
-            toggleButton.TextSize = 16  -- Increased size      
-            toggleButton.TextXAlignment = Enum.TextXAlignment.Left        
+			local state = opts.Default or false
 
-            local toggleIndicator = Instance.new("Frame", toggleFrame)        
-            toggleIndicator.Size = UDim2.new(0, 20, 0, 20)        
-            toggleIndicator.Position = UDim2.new(1, -25, 0.5, -10)        
-            toggleIndicator.BackgroundColor3 = Color3.fromRGB(35, 35, 35)        
-            ApplyStyle(toggleIndicator, 4)        
+			local function updateVisual()
+				if state then
+					toggleIndicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+				else
+					toggleIndicator.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+				end
+			end
 
-            local state = opts.Default or false        
+			toggleButton.MouseButton1Click:Connect(function()
+				state = not state
+				updateVisual()
+				if opts.Callback then
+					opts.Callback(state)
+				end
+			end)
 
-            local function updateVisual()        
-                if state then        
-                    toggleIndicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)        
-                else        
-                    toggleIndicator.BackgroundColor3 = Color3.fromRGB(35, 35, 35)        
-                end        
-            end        
+			updateVisual()
+		end
 
-            toggleButton.MouseButton1Click:Connect(function()        
-                state = not state        
-                updateVisual()        
-                if opts.Callback then        
-                    opts.Callback(state)        
-                end        
-            end)        
+		Tab.Button = TabButton
+		table.insert(Tabs, Tab)
+		return Tab
+	end
 
-            updateVisual()
-
-        end
-
-        Tab.Button = TabButton
-        table.insert(Tabs, Tab)
-        return Tab
-    end
-
-    return Window
+	return Window
 end
 
 function Library:MakeNotification(data)
-    local msg = Instance.new("TextLabel", Gui)
-    msg.Size = UDim2.new(0, 300, 0, 50)
-    msg.Position = UDim2.new(1, -310, 1, -100)
-    msg.Text = data.Content or "Notification"
-    msg.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
-    msg.TextColor3 = Color3.new(1, 1, 1)
-    msg.Font = Enum.Font.GothamBold
-    msg.TextSize = 20  -- Increased size for better readability
-    msg.TextWrapped = true
-    ApplyStyle(msg)
-    game:GetService("Debris"):AddItem(msg, data.Time or 3)
+	local msg = Instance.new("TextLabel", Gui)
+	msg.Size = UDim2.new(0, 300, 0, 50)
+	msg.Position = UDim2.new(1, -310, 1, -100)
+	msg.Text = data.Content or "Notification"
+	msg.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
+	msg.TextColor3 = Color3.new(1, 1, 1)
+	msg.Font = Enum.Font.GothamBold
+	msg.TextSize = 20
+	msg.TextWrapped = true
+	ApplyStyle(msg)
+	game:GetService("Debris"):AddItem(msg, data.Time or 3)
 end
 
 function Library:Init()
-    print("Fluxcore.Hub Initialized")
+	print("Fluxcore.Hub Initialized")
 end
 
 function Library:Destroy()
-    if Gui then Gui:Destroy() end
+	if Gui then Gui:Destroy() end
 end
 
 return Library
