@@ -1,4 +1,4 @@
--- Fluxcore.Hub GUI Framework (Left-Side Tabs + Content Right)
+-- Fluxcore.Hub GUI Framework (Left-Side Tabs + Content Right, Black Theme)
 local Library = {}
 
 local Players = game:GetService("Players")
@@ -17,7 +17,7 @@ local function ApplyStyle(obj, radius)
 	corner.CornerRadius = UDim.new(0, radius or 6)
 	local stroke = Instance.new("UIStroke", obj)
 	stroke.Thickness = 1
-	stroke.Color = Color3.fromRGB(80, 80, 80)
+	stroke.Color = Color3.fromRGB(40, 40, 40)
 end
 
 -- Toggle Button
@@ -26,7 +26,7 @@ ToggleButton.Size = UDim2.new(0, 30, 0, 30)
 ToggleButton.Position = UDim2.new(0.5, -15, 0, 10)
 ToggleButton.AnchorPoint = Vector2.new(0.5, 0)
 ToggleButton.Text = "F"
-ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
 ToggleButton.TextColor3 = Color3.new(1, 1, 1)
 ToggleButton.Font = Enum.Font.GothamBold
 ToggleButton.TextSize = 18
@@ -46,7 +46,7 @@ function Library:MakeWindow(config)
 	local MainFrame = Instance.new("Frame")
 	MainFrame.Size = UDim2.new(0, 600, 0, 350)
 	MainFrame.Position = UDim2.new(0.5, -300, 0.5, -175)
-	MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 	MainFrame.BorderSizePixel = 0
 	MainFrame.Name = config.Name or "Window"
 	MainFrame.Active = true
@@ -59,7 +59,7 @@ function Library:MakeWindow(config)
 	local TopBar = Instance.new("TextLabel", MainFrame)
 	TopBar.Size = UDim2.new(1, 0, 0, 40)
 	TopBar.Text = config.Name or "Fluxcore Window"
-	TopBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	TopBar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 	TopBar.TextColor3 = Color3.new(1, 1, 1)
 	TopBar.Font = Enum.Font.GothamBold
 	TopBar.TextSize = 20
@@ -69,7 +69,7 @@ function Library:MakeWindow(config)
 	local SideBar = Instance.new("Frame", MainFrame)
 	SideBar.Size = UDim2.new(0, 100, 1, -40)
 	SideBar.Position = UDim2.new(0, 0, 0, 40)
-	SideBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+	SideBar.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
 	SideBar.BorderSizePixel = 0
 
 	local TabButtonLayout = Instance.new("UIListLayout", SideBar)
@@ -79,7 +79,7 @@ function Library:MakeWindow(config)
 	local ContentArea = Instance.new("Frame", MainFrame)
 	ContentArea.Size = UDim2.new(1, -100, 1, -40)
 	ContentArea.Position = UDim2.new(0, 100, 0, 40)
-	ContentArea.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	ContentArea.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
 	ContentArea.BorderSizePixel = 0
 	ApplyStyle(ContentArea)
 
@@ -91,7 +91,7 @@ function Library:MakeWindow(config)
 		local TabButton = Instance.new("TextButton", SideBar)
 		TabButton.Size = UDim2.new(1, 0, 0, 30)
 		TabButton.Text = info.Name or "Tab"
-		TabButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+		TabButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 		TabButton.TextColor3 = Color3.new(1, 1, 1)
 		TabButton.Font = Enum.Font.Gotham
 		TabButton.TextSize = 14
@@ -100,7 +100,7 @@ function Library:MakeWindow(config)
 		local Content = Instance.new("ScrollingFrame", ContentArea)
 		Content.Size = UDim2.new(1, -10, 1, -10)
 		Content.Position = UDim2.new(0, 5, 0, 5)
-		Content.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+		Content.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 		Content.BorderSizePixel = 0
 		Content.Visible = false
 		Content.CanvasSize = UDim2.new(0, 0, 2, 0)
@@ -120,17 +120,17 @@ function Library:MakeWindow(config)
 		function Tab:Show()
 			if CurrentTab == Content then
 				Content.Visible = false
-				TabButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+				TabButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 				CurrentTab = nil
 			else
 				if CurrentTab then
 					CurrentTab.Visible = false
 				end
 				for _, t in pairs(Tabs) do
-					t.Button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+					t.Button.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 				end
 				Content.Visible = true
-				TabButton.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+				TabButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 				CurrentTab = Content
 			end
 		end
@@ -143,7 +143,7 @@ function Library:MakeWindow(config)
 			local btn = Instance.new("TextButton", Content)
 			btn.Size = UDim2.new(1, 0, 0, 30)
 			btn.Text = opts.Name or "Button"
-			btn.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+			btn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 			btn.TextColor3 = Color3.new(1, 1, 1)
 			btn.Font = Enum.Font.Gotham
 			btn.TextSize = 14
@@ -244,7 +244,7 @@ end
 			box.TextColor3 = Color3.new(1, 1, 1)
 			box.Font = Enum.Font.Code
 			box.TextSize = 14
-			box.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+			box.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 			ApplyStyle(box)
 			box.FocusLost:Connect(function()
 				opts.Callback(box.Text)
@@ -264,7 +264,7 @@ function Library:MakeNotification(data)
 	msg.Size = UDim2.new(0, 300, 0, 50)
 	msg.Position = UDim2.new(1, -310, 1, -100)
 	msg.Text = data.Content or "Notification"
-	msg.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+	msg.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
 	msg.TextColor3 = Color3.new(1, 1, 1)
 	msg.Font = Enum.Font.GothamBold
 	msg.TextSize = 18
