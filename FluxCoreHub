@@ -1,4 +1,4 @@
--- Fluxcore.Hub GUI Framework (Mobile-Optimized and Fully Draggable Toggle)
+-- Fluxcore.Hub GUI Framework (Fixed for Mobile Scrolling and Adaptive UI)
 local Library = {}
 
 local TweenService = game:GetService("TweenService")
@@ -23,7 +23,7 @@ local function ApplyStyle(obj, radius)
 	stroke.Color = Color3.fromRGB(40, 40, 40)
 end
 
--- Toggle Button (top-left corner + draggable)
+-- Toggle Button (top-left corner, draggable)
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Size = UDim2.new(0, 50, 0, 40)
 ToggleButton.Position = UDim2.new(0, 10, 0, 10)
@@ -36,41 +36,36 @@ ToggleButton.ZIndex = 10
 ToggleButton.Parent = Gui
 ApplyStyle(ToggleButton, 6)
 
--- Draggable support for ToggleButton (Mobile-friendly)
-do
-	local dragging = false
-	local dragInput, dragStart, startPos
+-- Draggable Toggle Button (mobile & PC)
+local draggingToggle = false
+local dragOffset = Vector2.zero
 
-	local function update(input)
-		local delta = input.Position - dragStart
-		ToggleButton.Position = UDim2.new(0, startPos.X + delta.X, 0, startPos.Y + delta.Y)
+ToggleButton.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		draggingToggle = true
+		dragOffset = Vector2.new(input.Position.X - ToggleButton.AbsolutePosition.X, input.Position.Y - ToggleButton.AbsolutePosition.Y)
 	end
+end)
 
-	ToggleButton.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = true
-			dragStart = input.Position
-			startPos = ToggleButton.Position
-			input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then
-					dragging = false
-				end
-			end)
-		end
-	end)
+UserInputService.InputChanged:Connect(function(input)
+	if draggingToggle and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local pos = input.Position - dragOffset
+		ToggleButton.Position = UDim2.new(0, math.clamp(pos.X, 0, Gui.AbsoluteSize.X - ToggleButton.AbsoluteSize.X), 0, math.clamp(pos.Y, 0, Gui.AbsoluteSize.Y - ToggleButton.AbsoluteSize.Y))
+	end
+end)
 
-	UserInputService.InputChanged:Connect(function(input)
-		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-			update(input)
-		end
-	end)
-end
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		draggingToggle = false
+	end
+end)
 
 local MainVisible = false
 
 -- Animation function
 local function AnimateWindow(window, show)
 	local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
 	if show then
 		window.Visible = true
 		window.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -208,7 +203,7 @@ function Library:MakeWindow(config)
 			Tab:Show()
 		end)
 
-		function Tab:AddButton(opts)
+	function Tab:AddButton(opts)
 			local btn = Instance.new("TextButton", Content)
 			btn.Size = UDim2.new(1, 0, 0, 30)
 			btn.Text = opts.Name or "Button"
