@@ -20,7 +20,7 @@ local function ApplyStyle(obj, radius)
 	stroke.Color = Color3.fromRGB(80, 80, 80)
 end
 
--- Square Toggle Button with letter "F"
+-- Toggle Button with letter "F"
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Size = UDim2.new(0, 30, 0, 30)
 ToggleButton.Position = UDim2.new(0.5, -15, 0, 10)
@@ -69,11 +69,15 @@ function Library:MakeWindow(config)
 	local Tabs = {}
 	local CurrentTab
 
+	local TabStartY = 45
+	local TabSpacing = 105
+
 	function Window:MakeTab(info)
 		local Tab = {}
+		local index = #Tabs
 		local TabButton = Instance.new("TextButton", MainFrame)
 		TabButton.Size = UDim2.new(0, 100, 0, 30)
-		TabButton.Position = UDim2.new(0, (#Tabs * 105) + 5, 0, 45)
+		TabButton.Position = UDim2.new(0, (index * TabSpacing) + 5, 0, TabStartY)
 		TabButton.Text = info.Name or "Tab"
 		TabButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 		TabButton.TextColor3 = Color3.new(1, 1, 1)
@@ -81,13 +85,23 @@ function Library:MakeWindow(config)
 		TabButton.TextSize = 14
 		ApplyStyle(TabButton)
 
+		-- Divider line below tab buttons
+		if index == 0 then
+			local Divider = Instance.new("Frame", MainFrame)
+			Divider.Size = UDim2.new(1, -20, 0, 2)
+			Divider.Position = UDim2.new(0, 10, 0, TabStartY + 35)
+			Divider.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+			Divider.BorderSizePixel = 0
+		end
+
 		local Content = Instance.new("ScrollingFrame", MainFrame)
-		Content.Size = UDim2.new(1, -20, 1, -80)
-		Content.Position = UDim2.new(0, 10, 0, 80)
+		Content.Size = UDim2.new(1, -20, 1, -125)
+		Content.Position = UDim2.new(0, 10, 0, TabStartY + 40)
 		Content.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 		Content.Visible = false
 		Content.BorderSizePixel = 0
 		Content.CanvasSize = UDim2.new(0, 0, 2, 0)
+		Content.ScrollBarThickness = 6
 		ApplyStyle(Content)
 
 		local layout = Instance.new("UIListLayout", Content)
