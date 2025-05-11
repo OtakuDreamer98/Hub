@@ -1,4 +1,4 @@
--- Fluxcore.Hub GUI Framework (Left-Side Tabs + Content Right)
+-- Fluxcore.Hub GUI Framework (Left-Side Tabs + Content Right FIXED)
 local Library = {}
 
 local Players = game:GetService("Players")
@@ -48,7 +48,7 @@ function Library:MakeWindow(config)
 	MainFrame.Position = UDim2.new(0.5, -300, 0.5, -175)
 	MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 	MainFrame.BorderSizePixel = 0
-	MainFrame.Name = config.Name or "Window"
+	MainFrame.Name = config.Name or "Fluxcore.Hub"
 	MainFrame.Active = true
 	MainFrame.Draggable = true
 	MainFrame.Parent = Gui
@@ -58,7 +58,7 @@ function Library:MakeWindow(config)
 
 	local TopBar = Instance.new("TextLabel", MainFrame)
 	TopBar.Size = UDim2.new(1, 0, 0, 40)
-	TopBar.Text = config.Name or "Fluxcore Window"
+	TopBar.Text = config.Name or "Fluxcore.Hub"
 	TopBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 	TopBar.TextColor3 = Color3.new(1, 1, 1)
 	TopBar.Font = Enum.Font.GothamBold
@@ -111,11 +111,13 @@ function Library:MakeWindow(config)
 		layout.SortOrder = Enum.SortOrder.LayoutOrder
 
 		function Tab:Show()
-			if CurrentTab then
-				CurrentTab.Visible = false
+			if CurrentTab ~= Content then
+				if CurrentTab then
+					CurrentTab.Visible = false
+				end
+				Content.Visible = true
+				CurrentTab = Content
 			end
-			Content.Visible = true
-			CurrentTab = Content
 		end
 
 		TabButton.MouseButton1Click:Connect(function()
@@ -124,7 +126,7 @@ function Library:MakeWindow(config)
 
 		function Tab:AddButton(opts)
 			local btn = Instance.new("TextButton", Content)
-			btn.Size = UDim2.new(0, 200, 0, 30)
+			btn.Size = UDim2.new(1, 0, 0, 30)
 			btn.Text = opts.Name or "Button"
 			btn.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
 			btn.TextColor3 = Color3.new(1, 1, 1)
@@ -136,7 +138,7 @@ function Library:MakeWindow(config)
 
 		function Tab:AddLabel(txt)
 			local lbl = Instance.new("TextLabel", Content)
-			lbl.Size = UDim2.new(1, -10, 0, 30)
+			lbl.Size = UDim2.new(1, 0, 0, 30)
 			lbl.Text = txt
 			lbl.BackgroundTransparency = 1
 			lbl.TextColor3 = Color3.new(1, 1, 1)
@@ -146,7 +148,7 @@ function Library:MakeWindow(config)
 
 		function Tab:AddTextbox(opts)
 			local box = Instance.new("TextBox", Content)
-			box.Size = UDim2.new(1, -10, 0, 30)
+			box.Size = UDim2.new(1, 0, 0, 30)
 			box.Text = opts.Default or ""
 			box.ClearTextOnFocus = opts.TextDisappear or false
 			box.TextColor3 = Color3.new(1, 1, 1)
