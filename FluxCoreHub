@@ -23,42 +23,42 @@ end
 
 -- Toggle Button
 local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(0, 30, 0, 30)
-ToggleButton.Position = UDim2.new(0.5, -15, 0, 10)
+ToggleButton.Size = UDim2.new(0, 60, 0, 40)
+ToggleButton.Position = UDim2.new(0.5, -30, 0, 10)
 ToggleButton.AnchorPoint = Vector2.new(0.5, 0)
 ToggleButton.Text = "F"
 ToggleButton.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
 ToggleButton.TextColor3 = Color3.new(1, 1, 1)
 ToggleButton.Font = Enum.Font.GothamBold
-ToggleButton.TextSize = 20
+ToggleButton.TextSize = 24
 ToggleButton.Parent = Gui
-ApplyStyle(ToggleButton, 4)
+ApplyStyle(ToggleButton, 6)
 
-local MainVisible = true
+local MainVisible = false
 
 -- Animation function
 local function AnimateWindow(window, show)
     local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
     if show then
-        -- Start collapsed in center
         window.Visible = true
         window.Position = UDim2.new(0.5, 0, 0.5, 0)
         window.Size = UDim2.new(0, 0, 0, 0)
+        window.BackgroundTransparency = 1
 
-        -- Animate outward to full size
         TweenService:Create(window, tweenInfo, {
             Position = UDim2.new(0.5, -300, 0.5, -175),
-            Size = UDim2.new(0, 600, 0, 350)
+            Size = UDim2.new(0, 600, 0, 350),
+            BackgroundTransparency = 0
         }):Play()
     else
-        -- Animate to center and collapse
-        local tween = TweenService:Create(window, tweenInfo, {
+        local closeTween = TweenService:Create(window, tweenInfo, {
+            Size = UDim2.new(0, 0, 0, 0),
             Position = UDim2.new(0.5, 0, 0.5, 0),
-            Size = UDim2.new(0, 0, 0, 0)
+            BackgroundTransparency = 1
         })
-        tween:Play()
-        tween.Completed:Connect(function()
+        closeTween:Play()
+        closeTween.Completed:Once(function()
             window.Visible = false
         end)
     end
@@ -81,6 +81,7 @@ function Library:MakeWindow(config)
     MainFrame.Name = config.Name or "Window"
     MainFrame.Active = true
     MainFrame.Draggable = true
+    MainFrame.Visible = false
     MainFrame.Parent = Gui
     ApplyStyle(MainFrame, 10)
 
@@ -96,13 +97,16 @@ function Library:MakeWindow(config)
     TopBar.BorderSizePixel = 0
     ApplyStyle(TopBar)
 
-    local SideBar = Instance.new("Frame", MainFrame)
-    SideBar.Size = UDim2.new(0, 100, 1, -40)
-    SideBar.Position = UDim2.new(0, 0, 0, 40)
-    SideBar.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
-    SideBar.BorderSizePixel = 0
+    local SideBarScroll = Instance.new("ScrollingFrame", MainFrame)
+    SideBarScroll.Size = UDim2.new(0, 100, 1, -40)
+    SideBarScroll.Position = UDim2.new(0, 0, 0, 40)
+    SideBarScroll.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
+    SideBarScroll.BorderSizePixel = 0
+    SideBarScroll.ScrollBarThickness = 6
+    SideBarScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    ApplyStyle(SideBarScroll)
 
-    local TabButtonLayout = Instance.new("UIListLayout", SideBar)
+    local TabButtonLayout = Instance.new("UIListLayout", SideBarScroll)
     TabButtonLayout.Padding = UDim.new(0, 5)
     TabButtonLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
@@ -118,7 +122,7 @@ function Library:MakeWindow(config)
 
     function Window:MakeTab(info)
         local Tab = {}
-        local TabButton = Instance.new("TextButton", SideBar)
+        local TabButton = Instance.new("TextButton", SideBarScroll)
         TabButton.Size = UDim2.new(1, 0, 0, 30)
         TabButton.Text = info.Name or "Tab"
         TabButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
