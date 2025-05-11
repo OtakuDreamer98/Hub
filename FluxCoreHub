@@ -382,10 +382,3 @@ if Gui then Gui:Destroy() end
 end
 
 return Library
-
-Fix the hub make it draggable for mobile full script
-
-Make them both draggable.
-
-Full script full script all of them do it all at once!?!!!
-
