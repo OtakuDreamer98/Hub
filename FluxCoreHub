@@ -238,44 +238,33 @@ function Window:MakeTab(info)
 	end  
 
     function Tab:AddToggle(opts)
-	local toggleFrame = Instance.new("Frame", Content)
-	toggleFrame.Size = UDim2.new(1, 0, 0, 30)
-	toggleFrame.BackgroundTransparency = 1
+	local toggle = Instance.new("TextButton", Content)
+	toggle.Size = UDim2.new(1, 0, 0, 30)
+	toggle.Text = opts.Name or "Toggle"
+	toggle.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+	toggle.TextColor3 = Color3.new(1, 1, 1)
+	toggle.Font = Enum.Font.Gotham
+	toggle.TextSize = 14
+	ApplyStyle(toggle)
 
-	local toggleButton = Instance.new("TextButton", toggleFrame)
-	toggleButton.Size = UDim2.new(0, 30, 0, 30)
-	toggleButton.Position = UDim2.new(0, 0, 0, 0)
-	toggleButton.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-	toggleButton.Text = ""
-	ApplyStyle(toggleButton, 4)
+	local state = opts.Default or false
+	local function updateVisual()
+		if state then
+			toggle.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+		else
+			toggle.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+		end
+	end
 
-	local fill = Instance.new("Frame", toggleButton)
-	fill.Size = UDim2.new(1, -6, 1, -6)
-	fill.Position = UDim2.new(0, 3, 0, 3)
-	fill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-	fill.Visible = false
-	ApplyStyle(fill, 3)
-
-	local label = Instance.new("TextLabel", toggleFrame)
-	label.Size = UDim2.new(1, -40, 1, 0)
-	label.Position = UDim2.new(0, 40, 0, 0)
-	label.BackgroundTransparency = 1
-	label.TextColor3 = Color3.new(1, 1, 1)
-	label.Font = Enum.Font.Gotham
-	label.TextSize = 14
-	label.TextXAlignment = Enum.TextXAlignment.Left
-	label.Text = opts.Name or "Toggle"
-
-	local toggled = opts.Default or false
-	fill.Visible = toggled
-
-	toggleButton.MouseButton1Click:Connect(function()
-		toggled = not toggled
-		fill.Visible = toggled
+	toggle.MouseButton1Click:Connect(function()
+		state = not state
+		updateVisual()
 		if opts.Callback then
-			opts.Callback(toggled)
+			opts.Callback(state)
 		end
 	end)
+
+	updateVisual()
 end
 
 	Tab.Button = TabButton  
@@ -310,3 +299,5 @@ if Gui then Gui:Destroy() end
 end
 
 return Library
+
+
