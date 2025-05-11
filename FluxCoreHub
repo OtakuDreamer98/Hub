@@ -1,7 +1,10 @@
--- Fluxcore.Hub GUI Framework (Enhanced)
+-- FluxCoreHub.lua
 local Library = {}
 
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
@@ -11,7 +14,6 @@ Gui.ResetOnSpawn = false
 Gui.IgnoreGuiInset = true
 Gui.Parent = PlayerGui
 
-local TweenService = game:GetService("TweenService")
 local Windows = {}
 
 local function ApplyStyle(obj, radius)
@@ -22,7 +24,7 @@ local function ApplyStyle(obj, radius)
 	stroke.Color = Color3.fromRGB(80, 80, 80)
 end
 
--- Toggle Button
+-- Toggle Button with animation
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Size = UDim2.new(0, 30, 0, 30)
 ToggleButton.Position = UDim2.new(0, 10, 0, 10)
@@ -38,8 +40,8 @@ local MainVisible = true
 ToggleButton.MouseButton1Click:Connect(function()
 	MainVisible = not MainVisible
 	for _, window in ipairs(Windows) do
-		local goal = { Position = MainVisible and window._openPos or window._closedPos }
-		TweenService:Create(window, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), goal):Play()
+		local tween = TweenService:Create(window, TweenInfo.new(0.3), {Size = MainVisible and UDim2.new(0, 600, 0, 350) or UDim2.new(0, 0, 0, 0)})
+		tween:Play()
 	end
 end)
 
@@ -55,9 +57,6 @@ function Library:MakeWindow(config)
 	MainFrame.Draggable = true
 	MainFrame.Parent = Gui
 	ApplyStyle(MainFrame, 10)
-
-	MainFrame._openPos = MainFrame.Position
-	MainFrame._closedPos = UDim2.new(MainFrame.Position.X.Scale, MainFrame.Position.X.Offset, 1, 20)
 
 	table.insert(Windows, MainFrame)
 
@@ -128,12 +127,8 @@ function Library:MakeWindow(config)
 				TabButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 				CurrentTab = nil
 			else
-				if CurrentTab then
-					CurrentTab.Visible = false
-				end
-				for _, t in pairs(Tabs) do
-					t.Button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-				end
+				if CurrentTab then CurrentTab.Visible = false end
+				for _, t in pairs(Tabs) do t.Button.BackgroundColor3 = Color3.fromRGB(70, 70, 70) end
 				Content.Visible = true
 				TabButton.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
 				CurrentTab = Content
@@ -182,66 +177,115 @@ function Library:MakeWindow(config)
 		end
 
 		function Tab:AddToggle(opts)
-			local toggle = Instance.new("TextButton", Content)
-			toggle.Size = UDim2.new(1, 0, 0, 30)
-			toggle.Text = "[ ] " .. opts.Name
-			toggle.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
-			toggle.TextColor3 = Color3.new(1, 1, 1)
-			toggle.Font = Enum.Font.Gotham
-			toggle.TextSize = 14
-			ApplyStyle(toggle)
-			local state = false
-			toggle.MouseButton1Click:Connect(function()
-				state = not state
-				toggle.Text = state and "[✔] " .. opts.Name or "[ ] " .. opts.Name
-				if opts.Callback then opts.Callback(state) end
+			local btn = Instance.new("TextButton", Content)
+			btn.Size = UDim2.new(1, 0, 0, 30)
+			btn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+			btn.Text = "[ ] " .. opts.Name
+			btn.TextColor3 = Color3.new(1, 1, 1)
+			btn.Font = Enum.Font.Gotham
+			btn.TextSize = 14
+			ApplyStyle(btn)
+
+			local toggled = false
+			btn.MouseButton1Click:Connect(function()
+				toggled = not toggled
+				btn.Text = (toggled and "[X] " or "[ ] ") .. opts.Name
+				opts.Callback(toggled)
 			end)
 		end
 
 		function Tab:AddSlider(opts)
-			local holder = Instance.new("Frame", Content)
-			holder.Size = UDim2.new(1, 0, 0, 40)
-			holder.BackgroundTransparency = 1
-
-			local label = Instance.new("TextLabel", holder)
-			label.Size = UDim2.new(1, 0, 0.5, 0)
-			label.Text = opts.Name .. ": " .. tostring(opts.Min)
+			local label = Instance.new("TextLabel", Content)
+			label.Size = UDim2.new(1, 0, 0, 30)
 			label.BackgroundTransparency = 1
 			label.TextColor3 = Color3.new(1, 1, 1)
 			label.Font = Enum.Font.Gotham
 			label.TextSize = 14
+			label.Text = opts.Name .. ": " .. opts.Default
 
-			local slider = Instance.new("TextButton", holder)
-			slider.Size = UDim2.new(1, 0, 0.5, 0)
-			slider.Position = UDim2.new(0, 0, 0.5, 0)
-			slider.Text = ""
-			slider.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+			local slider = Instance.new("Frame", Content)
+			slider.Size = UDim2.new(1, 0, 0, 20)
+			slider.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 			ApplyStyle(slider)
 
 			local fill = Instance.new("Frame", slider)
-			fill.Size = UDim2.new(0, 0, 1, 0)
 			fill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+			fill.Size = UDim2.new(0, 0, 1, 0)
 			fill.BorderSizePixel = 0
 			fill.Name = "Fill"
 
-			local dragging = false
+			local function updateSlider(x)
+				local relX = math.clamp((x - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
+				fill.Size = UDim2.new(relX, 0, 1, 0)
+				local value = math.floor((opts.Max - opts.Min) * relX + opts.Min)
+				label.Text = opts.Name .. ": " .. value
+				opts.Callback(value)
+			end
+
 			slider.InputBegan:Connect(function(input)
 				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-					dragging = true
+					updateSlider(input.Position.X)
+					local moveConn
+					moveConn = UserInputService.InputChanged:Connect(function(move)
+						if move.UserInputType == Enum.UserInputType.MouseMovement or move.UserInputType == Enum.UserInputType.Touch then
+							updateSlider(move.Position.X)
+						end
+					end)
+					UserInputService.InputEnded:Connect(function(endInput)
+						if endInput.UserInputType == Enum.UserInputType.MouseButton1 or endInput.UserInputType == Enum.UserInputType.Touch then
+							moveConn:Disconnect()
+						end
+					end)
 				end
 			end)
-			slider.InputEnded:Connect(function()
-				dragging = false
-			end)
-			game:GetService("UserInputService").InputChanged:Connect(function(input)
-				if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-					local pct = math.clamp((input.Position.X - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
-					local value = math.floor(opts.Min + (opts.Max - opts.Min) * pct)
-					fill.Size = UDim2.new(pct, 0, 1, 0)
-					label.Text = opts.Name .. ": " .. value
-					opts.Callback(value)
+		end
+
+		function Tab:AddDropdown(opts)
+			local frame = Instance.new("Frame", Content)
+			frame.Size = UDim2.new(1, 0, 0, 30)
+			frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+			ApplyStyle(frame)
+
+			local label = Instance.new("TextButton", frame)
+			label.Size = UDim2.new(1, 0, 1, 0)
+			label.Text = opts.Name .. " ▼"
+			label.TextColor3 = Color3.new(1, 1, 1)
+			label.Font = Enum.Font.Gotham
+			label.TextSize = 14
+			label.BackgroundTransparency = 1
+
+			local dropdownOpen = false
+			label.MouseButton1Click:Connect(function()
+				dropdownOpen = not dropdownOpen
+				label.Text = opts.Name .. (dropdownOpen and " ▲" or " ▼")
+				for _, item in ipairs(frame:GetChildren()) do
+					if item:IsA("TextButton") and item ~= label then
+						item.Visible = dropdownOpen
+					end
 				end
 			end)
+
+			for _, option in ipairs(opts.Options) do
+				local btn = Instance.new("TextButton", frame)
+				btn.Size = UDim2.new(1, 0, 0, 25)
+				btn.Position = UDim2.new(0, 0, 1, 0)
+				btn.Text = option
+				btn.Visible = false
+				btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+				btn.TextColor3 = Color3.new(1, 1, 1)
+				btn.Font = Enum.Font.Gotham
+				btn.TextSize = 14
+				btn.MouseButton1Click:Connect(function()
+					opts.Callback(option)
+					label.Text = opts.Name .. " ▼"
+					for _, item in ipairs(frame:GetChildren()) do
+						if item:IsA("TextButton") and item ~= label then
+							item.Visible = false
+						end
+					end
+					dropdownOpen = false
+				end)
+			end
 		end
 
 		Tab.Button = TabButton
