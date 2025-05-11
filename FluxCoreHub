@@ -1,4 +1,4 @@
--- Fluxcore.Hub GUI Framework (Improved)
+-- Fluxcore.Hub GUI Framework (Left-Side Tabs + Content Right)
 local Library = {}
 
 local Players = game:GetService("Players")
@@ -20,7 +20,7 @@ local function ApplyStyle(obj, radius)
 	stroke.Color = Color3.fromRGB(80, 80, 80)
 end
 
--- Toggle Button with letter "F"
+-- Toggle Button
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Size = UDim2.new(0, 30, 0, 30)
 ToggleButton.Position = UDim2.new(0.5, -15, 0, 10)
@@ -66,18 +66,30 @@ function Library:MakeWindow(config)
 	TopBar.BorderSizePixel = 0
 	ApplyStyle(TopBar)
 
+	local SideBar = Instance.new("Frame", MainFrame)
+	SideBar.Size = UDim2.new(0, 100, 1, -40)
+	SideBar.Position = UDim2.new(0, 0, 0, 40)
+	SideBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+	SideBar.BorderSizePixel = 0
+
+	local TabButtonLayout = Instance.new("UIListLayout", SideBar)
+	TabButtonLayout.Padding = UDim.new(0, 5)
+	TabButtonLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+	local ContentArea = Instance.new("Frame", MainFrame)
+	ContentArea.Size = UDim2.new(1, -100, 1, -40)
+	ContentArea.Position = UDim2.new(0, 100, 0, 40)
+	ContentArea.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	ContentArea.BorderSizePixel = 0
+	ApplyStyle(ContentArea)
+
 	local Tabs = {}
 	local CurrentTab
 
-	local TabStartY = 45
-	local TabSpacing = 105
-
 	function Window:MakeTab(info)
 		local Tab = {}
-		local index = #Tabs
-		local TabButton = Instance.new("TextButton", MainFrame)
-		TabButton.Size = UDim2.new(0, 100, 0, 30)
-		TabButton.Position = UDim2.new(0, (index * TabSpacing) + 5, 0, TabStartY)
+		local TabButton = Instance.new("TextButton", SideBar)
+		TabButton.Size = UDim2.new(1, -10, 0, 30)
 		TabButton.Text = info.Name or "Tab"
 		TabButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 		TabButton.TextColor3 = Color3.new(1, 1, 1)
@@ -85,23 +97,13 @@ function Library:MakeWindow(config)
 		TabButton.TextSize = 14
 		ApplyStyle(TabButton)
 
-		-- Divider line below tab buttons
-		if index == 0 then
-			local Divider = Instance.new("Frame", MainFrame)
-			Divider.Size = UDim2.new(1, -20, 0, 2)
-			Divider.Position = UDim2.new(0, 10, 0, TabStartY + 35)
-			Divider.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-			Divider.BorderSizePixel = 0
-		end
-
-		local Content = Instance.new("ScrollingFrame", MainFrame)
-		Content.Size = UDim2.new(1, -20, 1, -125)
-		Content.Position = UDim2.new(0, 10, 0, TabStartY + 40)
-		Content.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-		Content.Visible = false
+		local Content = Instance.new("ScrollingFrame", ContentArea)
+		Content.Size = UDim2.new(1, -10, 1, -10)
+		Content.Position = UDim2.new(0, 5, 0, 5)
+		Content.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 		Content.BorderSizePixel = 0
+		Content.Visible = false
 		Content.CanvasSize = UDim2.new(0, 0, 2, 0)
-		Content.ScrollBarThickness = 6
 		ApplyStyle(Content)
 
 		local layout = Instance.new("UIListLayout", Content)
@@ -109,16 +111,11 @@ function Library:MakeWindow(config)
 		layout.SortOrder = Enum.SortOrder.LayoutOrder
 
 		function Tab:Show()
-			if CurrentTab == Content then
-				Content.Visible = false
-				CurrentTab = nil
-			else
-				if CurrentTab then
-					CurrentTab.Visible = false
-				end
-				Content.Visible = true
-				CurrentTab = Content
+			if CurrentTab then
+				CurrentTab.Visible = false
 			end
+			Content.Visible = true
+			CurrentTab = Content
 		end
 
 		TabButton.MouseButton1Click:Connect(function()
