@@ -1,7 +1,6 @@
--- FluxCore GUI Framework with Animation + New Controls
+-- Fluxcore.Hub GUI Framework (Left-Side Tabs + Content Right)
 local Library = {}
 
-local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -9,7 +8,6 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local Gui = Instance.new("ScreenGui")
 Gui.Name = "Fluxcore.Hub"
 Gui.ResetOnSpawn = false
-Gui.IgnoreGuiInset = true
 Gui.Parent = PlayerGui
 
 local Windows = {}
@@ -25,31 +23,20 @@ end
 -- Toggle Button
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Size = UDim2.new(0, 30, 0, 30)
-ToggleButton.Position = UDim2.new(0, 10, 0, 10)
-ToggleButton.Text = ""
-ToggleButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+ToggleButton.Position = UDim2.new(0.5, -15, 0, 10)
+ToggleButton.AnchorPoint = Vector2.new(0.5, 0)
+ToggleButton.Text = "F"
+ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 ToggleButton.TextColor3 = Color3.new(1, 1, 1)
 ToggleButton.Font = Enum.Font.GothamBold
 ToggleButton.TextSize = 18
 ToggleButton.Parent = Gui
-ApplyStyle(ToggleButton)
-
-local CheckMark = Instance.new("TextLabel", ToggleButton)
-CheckMark.Size = UDim2.new(1, 0, 1, 0)
-CheckMark.Text = "✓"
-CheckMark.TextColor3 = Color3.new(1, 1, 1)
-CheckMark.Font = Enum.Font.GothamBold
-CheckMark.TextSize = 20
-CheckMark.BackgroundTransparency = 1
-CheckMark.Visible = true
+ApplyStyle(ToggleButton, 4)
 
 local MainVisible = true
 ToggleButton.MouseButton1Click:Connect(function()
 	MainVisible = not MainVisible
-	CheckMark.Visible = MainVisible
 	for _, window in ipairs(Windows) do
-		local tween = TweenService:Create(window, TweenInfo.new(0.25), {Transparency = MainVisible and 0 or 1})
-		tween:Play()
 		window.Visible = MainVisible
 	end
 end)
@@ -186,91 +173,6 @@ function Library:MakeWindow(config)
 			ApplyStyle(box)
 			box.FocusLost:Connect(function()
 				opts.Callback(box.Text)
-			end)
-		end
-
-		function Tab:AddToggle(opts)
-			local holder = Instance.new("Frame", Content)
-			holder.Size = UDim2.new(1, 0, 0, 30)
-			holder.BackgroundTransparency = 1
-
-			local btn = Instance.new("TextButton", holder)
-			btn.Size = UDim2.new(1, -30, 1, 0)
-			btn.Position = UDim2.new(0, 0, 0, 0)
-			btn.Text = opts.Name or "Toggle"
-			btn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-			btn.TextColor3 = Color3.new(1, 1, 1)
-			btn.Font = Enum.Font.Gotham
-			btn.TextSize = 14
-			ApplyStyle(btn)
-
-			local box = Instance.new("TextLabel", holder)
-			box.Size = UDim2.new(0, 30, 1, 0)
-			box.Position = UDim2.new(1, -30, 0, 0)
-			box.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-			box.Text = ""
-			box.TextColor3 = Color3.new(1, 1, 1)
-			box.Font = Enum.Font.GothamBold
-			box.TextSize = 16
-			ApplyStyle(box)
-
-			local toggled = false
-			local function update()
-				box.Text = toggled and "✓" or ""
-			end
-
-			btn.MouseButton1Click:Connect(function()
-				toggled = not toggled
-				update()
-				opts.Callback(toggled)
-			end)
-
-			update()
-		end
-
-		function Tab:AddDropdown(opts)
-			local holder = Instance.new("Frame", Content)
-			holder.Size = UDim2.new(1, 0, 0, 30)
-			holder.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-			ApplyStyle(holder)
-
-			local label = Instance.new("TextButton", holder)
-			label.Size = UDim2.new(1, 0, 1, 0)
-			label.Text = opts.Name or "Dropdown"
-			label.TextColor3 = Color3.new(1, 1, 1)
-			label.Font = Enum.Font.Gotham
-			label.TextSize = 14
-			label.BackgroundTransparency = 1
-
-			local open = false
-			local list = Instance.new("Frame", Content)
-			list.Size = UDim2.new(1, 0, 0, #opts.Options * 30)
-			list.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-			list.Visible = false
-			ApplyStyle(list)
-
-			local layout = Instance.new("UIListLayout", list)
-			layout.SortOrder = Enum.SortOrder.LayoutOrder
-
-			for _, item in ipairs(opts.Options) do
-				local opt = Instance.new("TextButton", list)
-				opt.Size = UDim2.new(1, 0, 0, 30)
-				opt.Text = item
-				opt.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
-				opt.TextColor3 = Color3.new(1, 1, 1)
-				opt.Font = Enum.Font.Gotham
-				opt.TextSize = 14
-				opt.MouseButton1Click:Connect(function()
-					label.Text = item
-					list.Visible = false
-					opts.Callback(item)
-					open = false
-				end)
-			end
-
-			label.MouseButton1Click:Connect(function()
-				open = not open
-				list.Visible = open
 			end)
 		end
 
