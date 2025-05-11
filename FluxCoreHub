@@ -161,81 +161,6 @@ function Library:MakeWindow(config)
 			lbl.TextSize = 18
 		end
 
-        function Tab:AddSlider(opts)
-	local sliderFrame = Instance.new("Frame", Content)
-	sliderFrame.Size = UDim2.new(1, 0, 0, 40)
-	sliderFrame.BackgroundTransparency = 1
-
-	local label = Instance.new("TextLabel", sliderFrame)
-	label.Size = UDim2.new(0.3, 0, 1, 0)
-	label.Position = UDim2.new(0, 0, 0, 0)
-	label.Text = opts.Name or "Slider"
-	label.TextColor3 = Color3.new(1, 1, 1)
-	label.BackgroundTransparency = 1
-	label.Font = Enum.Font.Gotham
-	label.TextSize = 14
-
-	local sliderBar = Instance.new("Frame", sliderFrame)
-	sliderBar.Size = UDim2.new(0.6, 0, 0.4, 0)
-	sliderBar.Position = UDim2.new(0.35, 0, 0.3, 0)
-	sliderBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-	ApplyStyle(sliderBar)
-
-	local fill = Instance.new("Frame", sliderBar)
-	fill.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
-	fill.Size = UDim2.new(0, 0, 1, 0)
-	fill.BorderSizePixel = 0
-
-	local knob = Instance.new("Frame", sliderBar)
-	knob.Size = UDim2.new(0, 10, 1.5, 0)
-	knob.Position = UDim2.new(0, 0, -0.25, 0)
-	knob.BackgroundColor3 = Color3.fromRGB(150, 150, 255)
-	ApplyStyle(knob, 5)
-
-	local dragging = false
-	local min = opts.Min or 0
-	local max = opts.Max or 100
-	local value = opts.Default or min
-
-	local function updateSlider(inputX)
-		local barPos = sliderBar.AbsolutePosition.X
-		local barSize = sliderBar.AbsoluteSize.X
-		local clampedX = math.clamp(inputX - barPos, 0, barSize)
-		local percent = clampedX / barSize
-		local val = math.floor(min + (max - min) * percent)
-		value = val
-		fill.Size = UDim2.new(percent, 0, 1, 0)
-		knob.Position = UDim2.new(percent, -5, -0.25, 0)
-		if opts.Callback then
-			opts.Callback(val)
-		end
-	end
-
-	sliderBar.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = true
-			updateSlider(input.Position.X)
-		end
-	end)
-
-	sliderBar.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = false
-		end
-	end)
-
-	game:GetService("UserInputService").InputChanged:Connect(function(input)
-		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-			updateSlider(input.Position.X)
-		end
-	end)
-
-	Content.ChildAdded:Wait() -- Wait to ensure absolute positions are available
-	task.defer(function()
-		updateSlider(sliderBar.AbsolutePosition.X + ((value - min) / (max - min)) * sliderBar.AbsoluteSize.X)
-	end)
-end
-
 		function Tab:AddTextbox(opts)
 			local box = Instance.new("TextBox", Content)
 			box.Size = UDim2.new(1, 0, 0, 30)
@@ -248,6 +173,67 @@ end
 			ApplyStyle(box)
 			box.FocusLost:Connect(function()
 				opts.Callback(box.Text)
+			end)
+		end
+
+		function Tab:AddSlider(opts)
+			local sliderFrame = Instance.new("Frame", Content)
+			sliderFrame.Size = UDim2.new(1, 0, 0, 40)
+			sliderFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+			ApplyStyle(sliderFrame)
+
+			local titleLabel = Instance.new("TextLabel", sliderFrame)
+			titleLabel.Size = UDim2.new(0, 100, 1, 0)
+			titleLabel.Position = UDim2.new(0, 5, 0, 0)
+			titleLabel.Text = opts.Name or "Slider"
+			titleLabel.BackgroundTransparency = 1
+			titleLabel.TextColor3 = Color3.new(1, 1, 1)
+			titleLabel.Font = Enum.Font.Gotham
+			titleLabel.TextSize = 14
+			titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+			local sliderBar = Instance.new("Frame", sliderFrame)
+			sliderBar.Size = UDim2.new(1, -120, 0, 6)
+			sliderBar.Position = UDim2.new(0, 110, 0.5, -3)
+			sliderBar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+			sliderBar.BorderSizePixel = 0
+			ApplyStyle(sliderBar, 3)
+
+			local fill = Instance.new("Frame", sliderBar)
+			fill.Size = UDim2.new(0, 0, 1, 0)
+			fill.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+			fill.BorderSizePixel = 0
+			ApplyStyle(fill, 3)
+
+			local value = opts.Default or opts.Min or 0
+			local dragging = false
+
+			local function updateValue(inputX)
+				local relative = math.clamp((inputX - sliderBar.AbsolutePosition.X) / sliderBar.AbsoluteSize.X, 0, 1)
+				value = math.floor((opts.Min + (opts.Max - opts.Min) * relative) * 100) / 100
+				fill.Size = UDim2.new(relative, 0, 1, 0)
+				if opts.Callback then
+					opts.Callback(value)
+				end
+			end
+
+			sliderBar.InputBegan:Connect(function(input)
+				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+					dragging = true
+					updateValue(input.Position.X)
+				end
+			end)
+
+			game:GetService("UserInputService").InputChanged:Connect(function(input)
+				if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+					updateValue(input.Position.X)
+				end
+			end)
+
+			game:GetService("UserInputService").InputEnded:Connect(function(input)
+				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+					dragging = false
+				end
 			end)
 		end
 
