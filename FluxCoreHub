@@ -238,25 +238,38 @@ function Window:MakeTab(info)
 	end  
 
     function Tab:AddToggle(opts)
-	local toggle = Instance.new("TextButton", Content)
-	toggle.Size = UDim2.new(1, 0, 0, 30)
-	toggle.Text = opts.Name or "Toggle"
-	toggle.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-	toggle.TextColor3 = Color3.new(1, 1, 1)
-	toggle.Font = Enum.Font.Gotham
-	toggle.TextSize = 14
-	ApplyStyle(toggle)
+	local toggleFrame = Instance.new("Frame", Content)
+	toggleFrame.Size = UDim2.new(1, 0, 0, 30)
+	toggleFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+	toggleFrame.BorderSizePixel = 0
+	ApplyStyle(toggleFrame)
+
+	local toggleButton = Instance.new("TextButton", toggleFrame)
+	toggleButton.Size = UDim2.new(1, 0, 1, 0)
+	toggleButton.BackgroundTransparency = 1
+	toggleButton.Text = opts.Name or "Toggle"
+	toggleButton.TextColor3 = Color3.new(1, 1, 1)
+	toggleButton.Font = Enum.Font.Gotham
+	toggleButton.TextSize = 14
+	toggleButton.TextXAlignment = Enum.TextXAlignment.Left
+
+	local toggleIndicator = Instance.new("Frame", toggleFrame)
+	toggleIndicator.Size = UDim2.new(0, 20, 0, 20)
+	toggleIndicator.Position = UDim2.new(1, -25, 0.5, -10)
+	toggleIndicator.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+	ApplyStyle(toggleIndicator, 4)
 
 	local state = opts.Default or false
+
 	local function updateVisual()
 		if state then
-			toggle.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+			toggleIndicator.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
 		else
-			toggle.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+			toggleIndicator.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 		end
 	end
 
-	toggle.MouseButton1Click:Connect(function()
+	toggleButton.MouseButton1Click:Connect(function()
 		state = not state
 		updateVisual()
 		if opts.Callback then
