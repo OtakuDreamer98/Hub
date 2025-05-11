@@ -1,13 +1,10 @@
--- Fluxcore.Hub GUI Framework (Improved)
+-- Fluxcore.Hub GUI Framework (Left-Side Tabs + Content Right)
 local Library = {}
 
--- Service References
 local Players = game:GetService("Players")
-local Debris = game:GetService("Debris")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- Create ScreenGui
 local Gui = Instance.new("ScreenGui")
 Gui.Name = "Fluxcore.Hub"
 Gui.ResetOnSpawn = false
@@ -15,11 +12,9 @@ Gui.Parent = PlayerGui
 
 local Windows = {}
 
--- Styling Utility
 local function ApplyStyle(obj, radius)
 	local corner = Instance.new("UICorner", obj)
 	corner.CornerRadius = UDim.new(0, radius or 6)
-
 	local stroke = Instance.new("UIStroke", obj)
 	stroke.Thickness = 1
 	stroke.Color = Color3.fromRGB(80, 80, 80)
@@ -46,10 +41,8 @@ ToggleButton.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Create Main Window
 function Library:MakeWindow(config)
 	local Window = {}
-
 	local MainFrame = Instance.new("Frame")
 	MainFrame.Size = UDim2.new(0, 600, 0, 350)
 	MainFrame.Position = UDim2.new(0.5, -300, 0.5, -175)
@@ -60,9 +53,9 @@ function Library:MakeWindow(config)
 	MainFrame.Draggable = true
 	MainFrame.Parent = Gui
 	ApplyStyle(MainFrame, 10)
+
 	table.insert(Windows, MainFrame)
 
-	-- Top Bar
 	local TopBar = Instance.new("TextLabel", MainFrame)
 	TopBar.Size = UDim2.new(1, 0, 0, 40)
 	TopBar.Text = config.Name or "Fluxcore Window"
@@ -73,24 +66,16 @@ function Library:MakeWindow(config)
 	TopBar.BorderSizePixel = 0
 	ApplyStyle(TopBar)
 
-	-- Sidebar
 	local SideBar = Instance.new("Frame", MainFrame)
 	SideBar.Size = UDim2.new(0, 100, 1, -40)
 	SideBar.Position = UDim2.new(0, 0, 0, 40)
 	SideBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 	SideBar.BorderSizePixel = 0
-	ApplyStyle(SideBar)
 
 	local TabButtonLayout = Instance.new("UIListLayout", SideBar)
 	TabButtonLayout.Padding = UDim.new(0, 5)
 	TabButtonLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
-	local SidePadding = Instance.new("UIPadding", SideBar)
-	SidePadding.PaddingTop = UDim.new(0, 5)
-	SidePadding.PaddingLeft = UDim.new(0, 5)
-	SidePadding.PaddingRight = UDim.new(0, 5)
-
-	-- Content Area
 	local ContentArea = Instance.new("Frame", MainFrame)
 	ContentArea.Size = UDim2.new(1, -100, 1, -40)
 	ContentArea.Position = UDim2.new(0, 100, 0, 40)
@@ -103,7 +88,6 @@ function Library:MakeWindow(config)
 
 	function Window:MakeTab(info)
 		local Tab = {}
-
 		local TabButton = Instance.new("TextButton", SideBar)
 		TabButton.Size = UDim2.new(1, 0, 0, 30)
 		TabButton.Text = info.Name or "Tab"
@@ -134,17 +118,21 @@ function Library:MakeWindow(config)
 		padding.PaddingBottom = UDim.new(0, 5)
 
 		function Tab:Show()
-			if CurrentTab then
-				CurrentTab.Visible = false
+			if CurrentTab == Content then
+				Content.Visible = false
+				TabButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+				CurrentTab = nil
+			else
+				if CurrentTab then
+					CurrentTab.Visible = false
+				end
+				for _, t in pairs(Tabs) do
+					t.Button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+				end
+				Content.Visible = true
+				TabButton.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+				CurrentTab = Content
 			end
-			Content.Visible = true
-			CurrentTab = Content
-
-			-- Visual Feedback for active tab
-			for _, t in pairs(Tabs) do
-				t.Button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-			end
-			TabButton.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
 		end
 
 		TabButton.MouseButton1Click:Connect(function()
@@ -153,7 +141,7 @@ function Library:MakeWindow(config)
 
 		function Tab:AddButton(opts)
 			local btn = Instance.new("TextButton", Content)
-			btn.Size = UDim2.new(0, 200, 0, 30)
+			btn.Size = UDim2.new(1, 0, 0, 30)
 			btn.Text = opts.Name or "Button"
 			btn.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
 			btn.TextColor3 = Color3.new(1, 1, 1)
@@ -196,7 +184,6 @@ function Library:MakeWindow(config)
 	return Window
 end
 
--- Notification
 function Library:MakeNotification(data)
 	local msg = Instance.new("TextLabel", Gui)
 	msg.Size = UDim2.new(0, 300, 0, 50)
@@ -208,15 +195,13 @@ function Library:MakeNotification(data)
 	msg.TextSize = 18
 	msg.TextWrapped = true
 	ApplyStyle(msg)
-	Debris:AddItem(msg, data.Time or 3)
+	game:GetService("Debris"):AddItem(msg, data.Time or 3)
 end
 
--- Init
 function Library:Init()
 	print("Fluxcore.Hub Initialized")
 end
 
--- Destroy
 function Library:Destroy()
 	if Gui then Gui:Destroy() end
 end
