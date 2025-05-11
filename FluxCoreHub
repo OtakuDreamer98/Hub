@@ -1,14 +1,16 @@
--- Fluxcore.Hub GUI Framework (with Side Collision Animation)
+-- Fluxcore.Hub GUI Framework (Fixed for Mobile Scrolling and Adaptive UI)
 local Library = {}
 
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 local Gui = Instance.new("ScreenGui")
 Gui.Name = "Fluxcore.Hub"
 Gui.ResetOnSpawn = false
+Gui.IgnoreGuiInset = true
 Gui.Parent = PlayerGui
 
 local Windows = {}
@@ -21,16 +23,17 @@ local function ApplyStyle(obj, radius)
     stroke.Color = Color3.fromRGB(40, 40, 40)
 end
 
--- Toggle Button
+-- Toggle Button (top-right corner)
 local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(0, 60, 0, 40)
-ToggleButton.Position = UDim2.new(0.5, -30, 0, 10)
-ToggleButton.AnchorPoint = Vector2.new(0.5, 0)
+ToggleButton.Size = UDim2.new(0, 50, 0, 40)
+ToggleButton.Position = UDim2.new(1, -60, 0, 10)
+ToggleButton.AnchorPoint = Vector2.new(0, 0)
 ToggleButton.Text = "F"
 ToggleButton.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
 ToggleButton.TextColor3 = Color3.new(1, 1, 1)
 ToggleButton.Font = Enum.Font.GothamBold
 ToggleButton.TextSize = 24
+ToggleButton.ZIndex = 10
 ToggleButton.Parent = Gui
 ApplyStyle(ToggleButton, 6)
 
@@ -104,6 +107,8 @@ function Library:MakeWindow(config)
     SideBarScroll.BorderSizePixel = 0
     SideBarScroll.ScrollBarThickness = 6
     SideBarScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    SideBarScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    SideBarScroll.ClipsDescendants = true
     ApplyStyle(SideBarScroll)
 
     local TabButtonLayout = Instance.new("UIListLayout", SideBarScroll)
@@ -137,8 +142,8 @@ function Library:MakeWindow(config)
         Content.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
         Content.BorderSizePixel = 0
         Content.Visible = false
-        Content.CanvasSize = UDim2.new(0, 0, 2, 0)
         Content.ScrollBarThickness = 6
+        Content.AutomaticCanvasSize = Enum.AutomaticSize.Y
         ApplyStyle(Content)
 
         local layout = Instance.new("UIListLayout", Content)
