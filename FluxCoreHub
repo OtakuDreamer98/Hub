@@ -355,6 +355,77 @@ return Tab
 
 end
 
+function Tab:AddDropdown(opts)
+    local dropdownFrame = Instance.new("Frame", Content)
+    dropdownFrame.Size = UDim2.new(1, 0, 0, 30)
+    dropdownFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    dropdownFrame.BorderSizePixel = 0
+    ApplyStyle(dropdownFrame)
+
+    local selected = Instance.new("TextButton", dropdownFrame)
+    selected.Size = UDim2.new(1, 0, 1, 0)
+    selected.BackgroundTransparency = 1
+    selected.Text = opts.Name or "Select"
+    selected.TextColor3 = Color3.new(1, 1, 1)
+    selected.Font = Enum.Font.GothamSemibold
+    selected.TextSize = 16
+    selected.TextXAlignment = Enum.TextXAlignment.Left
+
+    local dropIndicator = Instance.new("TextLabel", dropdownFrame)
+    dropIndicator.Size = UDim2.new(0, 20, 0, 20)
+    dropIndicator.Position = UDim2.new(1, -25, 0.5, -10)
+    dropIndicator.Text = "▼"
+    dropIndicator.BackgroundTransparency = 1
+    dropIndicator.TextColor3 = Color3.new(1, 1, 1)
+    dropIndicator.Font = Enum.Font.GothamSemibold
+    dropIndicator.TextSize = 16
+
+    local open = false
+    local optionContainer
+
+    local function toggleDropdown()
+        open = not open
+        if open then
+            optionContainer = Instance.new("Frame", Content)
+            optionContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+            optionContainer.BorderSizePixel = 0
+            optionContainer.Size = UDim2.new(1, 0, 0, #opts.Options * 30)
+            ApplyStyle(optionContainer)
+
+            local layout = Instance.new("UIListLayout", optionContainer)
+            layout.Padding = UDim.new(0, 2)
+            layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+            for _, option in ipairs(opts.Options) do
+                local optBtn = Instance.new("TextButton", optionContainer)
+                optBtn.Size = UDim2.new(1, 0, 0, 30)
+                optBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+                optBtn.Text = tostring(option)
+                optBtn.TextColor3 = Color3.new(1, 1, 1)
+                optBtn.Font = Enum.Font.Gotham
+                optBtn.TextSize = 16
+                ApplyStyle(optBtn)
+
+                optBtn.MouseButton1Click:Connect(function()
+                    selected.Text = option
+                    if opts.Callback then
+                        opts.Callback(option)
+                    end
+                    optionContainer:Destroy()
+                    open = false
+                end)
+            end
+        else
+            if optionContainer then
+                optionContainer:Destroy()
+                open = false
+            end
+        end
+    end
+
+    selected.MouseButton1Click:Connect(toggleDropdown)
+end
+
 return Window
 
 end
