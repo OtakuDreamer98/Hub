@@ -247,6 +247,64 @@ opts.Callback(box.Text)
 end)
 end
 
+function Tab:AddDropdown(opts)
+    local dropdownFrame = Instance.new("Frame", Content)
+    dropdownFrame.Size = UDim2.new(1, 0, 0, 30)
+    dropdownFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    dropdownFrame.BorderSizePixel = 0
+    ApplyStyle(dropdownFrame)
+
+    local dropdownButton = Instance.new("TextButton", dropdownFrame)
+    dropdownButton.Size = UDim2.new(1, 0, 1, 0)
+    dropdownButton.BackgroundTransparency = 1
+    dropdownButton.Text = opts.Name or "Select Option"
+    dropdownButton.TextColor3 = Color3.new(1, 1, 1)
+    dropdownButton.Font = Enum.Font.GothamSemibold
+    dropdownButton.TextSize = 16
+    dropdownButton.TextXAlignment = Enum.TextXAlignment.Left
+
+    local dropdownList = Instance.new("Frame", Content)
+    dropdownList.Size = UDim2.new(1, 0, 0, 0)
+    dropdownList.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    dropdownList.BorderSizePixel = 0
+    dropdownList.ClipsDescendants = true
+    dropdownList.Visible = false
+    ApplyStyle(dropdownList)
+
+    local listLayout = Instance.new("UIListLayout", dropdownList)
+    listLayout.Padding = UDim.new(0, 2)
+    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+    local expanded = false
+
+    local function toggleDropdown()
+        expanded = not expanded
+        dropdownList.Visible = expanded
+        dropdownList.Size = expanded and UDim2.new(1, 0, 0, #opts.Options * 30) or UDim2.new(1, 0, 0, 0)
+    end
+
+    dropdownButton.MouseButton1Click:Connect(toggleDropdown)
+
+    for _, option in ipairs(opts.Options or {}) do
+        local optionButton = Instance.new("TextButton", dropdownList)
+        optionButton.Size = UDim2.new(1, 0, 0, 30)
+        optionButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+        optionButton.Text = option
+        optionButton.TextColor3 = Color3.new(1, 1, 1)
+        optionButton.Font = Enum.Font.Gotham
+        optionButton.TextSize = 16
+        ApplyStyle(optionButton)
+
+        optionButton.MouseButton1Click:Connect(function()
+            dropdownButton.Text = option
+            toggleDropdown()
+            if opts.Callback then
+                opts.Callback(option)
+            end
+        end)
+    end
+end
+
 function Tab:AddSlider(opts)
 local sliderFrame = Instance.new("Frame", Content)
 sliderFrame.Size = UDim2.new(1, 0, 0, 40)
@@ -356,7 +414,7 @@ return Tab
 end
 
 return Window
-
+ 
 end
 
 function Library:MakeNotification(data)
