@@ -27,7 +27,7 @@ local Config = {
     Sizes = {
         Window = {Width = 600, Height = 400},
         ToggleButton = {Width = 50, Height = 50},
-        TabButton = {Height = 35, Width = 110}, -- Fixed width for tabs
+        TabButton = {Height = 35, Width = 110},
         ElementHeight = 32,
         SidebarWidth = 120
     }
@@ -39,6 +39,7 @@ Gui.Name = "Fluxcore.Hub"
 Gui.ResetOnSpawn = false
 Gui.IgnoreGuiInset = true
 Gui.DisplayOrder = 10
+Gui.Enabled = true -- Ensure GUI is enabled
 Gui.Parent = PlayerGui
 
 local Windows = {}
@@ -142,7 +143,9 @@ local function AnimateWindow(window, show)
         }):Play()
     else
         local tween = CreateTween(window, {
-            Size = UDim2.new(0, snip
+            Size = UDim2.new(0, 0, 0, 0),
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            BackgroundTransparency = 1
         })
         tween:Play()
         tween.Completed:Once(function()
@@ -169,7 +172,7 @@ function Fluxcore:MakeWindow(config)
     MainFrame.Active = true
     MainFrame.Visible = false
     MainFrame.Name = config.Name or "Window"
-    MainFrame.ClipsDescendants = true -- Prevent overflow
+    MainFrame.ClipsDescendants = true
     MainFrame.Parent = Gui
     ApplyStyle(MainFrame, nil, true)
 
@@ -186,7 +189,8 @@ function Fluxcore:MakeWindow(config)
     TopBar.TextXAlignment = Enum.TextXAlignment.Left
     TopBar.TextYAlignment = Enum.TextYAlignment.Center
     TopBar.Position = UDim2.new(0, 10, 0, 0)
-    TopBar.TextTruncate = Enum.TextTruncate.AtEnd -- Prevent text overflow
+    TopBar.TextTruncate = Enum.TextTruncate.AtEnd
+    TopBar.ClipsDescendants = true
     ApplyStyle(TopBar)
 
     -- Sidebar
@@ -232,7 +236,7 @@ function Fluxcore:MakeWindow(config)
         TabButton.TextSize = 15
         TabButton.TextXAlignment = Enum.TextXAlignment.Left
         TabButton.TextYAlignment = Enum.TextYAlignment.Center
-        TabButton.TextTruncate = Enum.TextTruncate.AtEnd -- Prevent text overflow
+        TabButton.TextTruncate = Enum.TextTruncate.AtEnd
         TabButton.ClipsDescendants = true
         ApplyStyle(TabButton, UDim.new(0, 6))
 
@@ -494,9 +498,7 @@ function Fluxcore:MakeWindow(config)
 
         function Tab:AddToggle(opts)
             local toggleFrame = Instance.new("Frame", Content)
-            toggleFrame.Size = UDim
-
-2.new(1, 0, 0, Config.Sizes.ElementHeight)
+            toggleFrame.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
             toggleFrame.BackgroundColor3 = Config.Theme.SecondaryColor
             toggleFrame.ClipsDescendants = true
             ApplyStyle(toggleFrame, UDim.new(0, 6))
@@ -579,7 +581,10 @@ end
 function Fluxcore:Init()
     print("Fluxcore.Hub Initialized")
     RunService:BindToRenderStep("FluxcoreUpdate", Enum.RenderPriority.Input.Value, function()
-        -- Add runtime updates if needed
+        -- Ensure GUI remains enabled
+        if Gui and not Gui.Enabled then
+            Gui.Enabled = true
+        end
     end)
 end
 
