@@ -27,7 +27,7 @@ local Config = {
     Sizes = {
         Window = {Width = 600, Height = 400},
         ToggleButton = {Width = 50, Height = 50},
-        TabButton = {Height = 35, Width = 110},
+        TabButton = {Height = 35, Width = 104}, -- Adjusted to fit within sidebar with padding
         ElementHeight = 32,
         SidebarWidth = 120
     }
@@ -39,7 +39,7 @@ Gui.Name = "Fluxcore.Hub"
 Gui.ResetOnSpawn = false
 Gui.IgnoreGuiInset = true
 Gui.DisplayOrder = 10
-Gui.Enabled = true -- Ensure GUI is enabled
+Gui.Enabled = true
 Gui.Parent = PlayerGui
 
 local Windows = {}
@@ -210,8 +210,8 @@ function Fluxcore:MakeWindow(config)
     local SideBarPadding = Instance.new("UIPadding", SideBarScroll)
     SideBarPadding.PaddingTop = UDim.new(0, 5)
     SideBarPadding.PaddingBottom = UDim.new(0, 5)
-    SideBarPadding.PaddingLeft = UDim.new(0, 5)
-    SideBarPadding.PaddingRight = UDim.new(0, 5)
+    SideBarPadding.PaddingLeft = UDim.new(0, 8)
+    SideBarPadding.PaddingRight = UDim.new(0, 8)
 
     -- Content Area
     local ContentArea = Instance.new("Frame", MainFrame)
@@ -229,15 +229,17 @@ function Fluxcore:MakeWindow(config)
         local Tab = {}
         local TabButton = Instance.new("TextButton", SideBarScroll)
         TabButton.Size = UDim2.new(0, Config.Sizes.TabButton.Width, 0, Config.Sizes.TabButton.Height)
-        TabButton.Text = info.Name or "Tab"
+        TabButton.Text = (info.Name or "Tab"):gsub("%s+$", "") -- Remove trailing spaces
         TabButton.BackgroundColor3 = Config.Theme.SecondaryColor
         TabButton.TextColor3 = Config.Theme.TextColor
         TabButton.Font = Enum.Font.GothamSemibold
-        TabButton.TextSize = 15
+        TabButton.TextSize = 14 -- Slightly smaller for better fit
         TabButton.TextXAlignment = Enum.TextXAlignment.Left
         TabButton.TextYAlignment = Enum.TextYAlignment.Center
         TabButton.TextTruncate = Enum.TextTruncate.AtEnd
         TabButton.ClipsDescendants = true
+        local buttonPadding = Instance.new("UIPadding", TabButton)
+        buttonPadding.PaddingLeft = UDim.new(0, 8) -- Consistent padding for text
         ApplyStyle(TabButton, UDim.new(0, 6))
 
         -- Tab Hover Effect
@@ -297,7 +299,7 @@ function Fluxcore:MakeWindow(config)
         function Tab:AddButton(opts)
             local btn = Instance.new("TextButton", Content)
             btn.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
-            btn.Text = opts.Name or "Button"
+            btn.Text = (opts.Name or "Button"):gsub("%s+$", "")
             btn.BackgroundColor3 = Config.Theme.SecondaryColor
             btn.TextColor3 = Config.Theme.TextColor
             btn.Font = Enum.Font.GothamSemibold
@@ -305,6 +307,8 @@ function Fluxcore:MakeWindow(config)
             btn.TextXAlignment = Enum.TextXAlignment.Left
             btn.TextTruncate = Enum.TextTruncate.AtEnd
             btn.ClipsDescendants = true
+            local btnPadding = Instance.new("UIPadding", btn)
+            btnPadding.PaddingLeft = UDim.new(0, 8)
             ApplyStyle(btn, UDim.new(0, 6))
             btn.MouseButton1Click:Connect(function()
                 if opts.Callback then opts.Callback() end
@@ -320,7 +324,7 @@ function Fluxcore:MakeWindow(config)
         function Tab:AddLabel(txt)
             local lbl = Instance.new("TextLabel", Content)
             lbl.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
-            lbl.Text = txt
+            lbl.Text = (txt or "Label"):gsub("%s+$", "")
             lbl.BackgroundTransparency = 1
             lbl.TextColor3 = Config.Theme.TextColor
             lbl.Font = Enum.Font.GothamSemibold
@@ -328,12 +332,14 @@ function Fluxcore:MakeWindow(config)
             lbl.TextXAlignment = Enum.TextXAlignment.Left
             lbl.TextTruncate = Enum.TextTruncate.AtEnd
             lbl.ClipsDescendants = true
+            local lblPadding = Instance.new("UIPadding", lbl)
+            lblPadding.PaddingLeft = UDim.new(0, 8)
         end
 
         function Tab:AddTextbox(opts)
             local box = Instance.new("TextBox", Content)
             box.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
-            box.Text = opts.Default or ""
+            box.Text = (opts.Default or ""):gsub("%s+$", "")
             box.ClearTextOnFocus = opts.TextDisappear or false
             box.TextColor3 = Config.Theme.TextColor
             box.Font = Enum.Font.GothamSemibold
@@ -342,6 +348,8 @@ function Fluxcore:MakeWindow(config)
             box.TextTruncate = Enum.TextTruncate.AtEnd
             box.BackgroundColor3 = Config.Theme.PrimaryColor
             box.ClipsDescendants = true
+            local boxPadding = Instance.new("UIPadding", box)
+            boxPadding.PaddingLeft = UDim.new(0, 8)
             ApplyStyle(box, UDim.new(0, 6))
             box.FocusLost:Connect(function()
                 if opts.Callback then opts.Callback(box.Text) end
@@ -364,13 +372,15 @@ function Fluxcore:MakeWindow(config)
             local dropdownButton = Instance.new("TextButton", dropdownFrame)
             dropdownButton.Size = UDim2.new(1, 0, 1, 0)
             dropdownButton.BackgroundTransparency = 1
-            dropdownButton.Text = opts.Name or "Select Option"
+            dropdownButton.Text = (opts.Name or "Select Option"):gsub("%s+$", "")
             dropdownButton.TextColor3 = Config.Theme.TextColor
             dropdownButton.Font = Enum.Font.GothamSemibold
             dropdownButton.TextSize = 15
             dropdownButton.TextXAlignment = Enum.TextXAlignment.Left
             dropdownButton.TextTruncate = Enum.TextTruncate.AtEnd
             dropdownButton.ClipsDescendants = true
+            local btnPadding = Instance.new("UIPadding", dropdownButton)
+            btnPadding.PaddingLeft = UDim.new(0, 8)
 
             local dropdownList = Instance.new("Frame", Content)
             dropdownList.Size = UDim2.new(1, 0, 0, 0)
@@ -402,16 +412,18 @@ function Fluxcore:MakeWindow(config)
                 local optionButton = Instance.new("TextButton", dropdownList)
                 optionButton.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
                 optionButton.BackgroundColor3 = Config.Theme.SecondaryColor
-                optionButton.Text = option
+                optionButton.Text = tostring(option):gsub("%s+$", "")
                 optionButton.TextColor3 = Config.Theme.TextColor
                 optionButton.Font = Enum.Font.Gotham
                 optionButton.TextSize = 14
                 optionButton.TextXAlignment = Enum.TextXAlignment.Left
                 optionButton.TextTruncate = Enum.TextTruncate.AtEnd
                 optionButton.ClipsDescendants = true
+                local optPadding = Instance.new("UIPadding", optionButton)
+                optPadding.PaddingLeft = UDim.new(0, 8)
                 ApplyStyle(optionButton, UDim.new(0, 6))
                 optionButton.MouseButton1Click:Connect(function()
-                    dropdownButton.Text = option
+                    dropdownButton.Text = tostring(option):gsub("%s+$", "")
                     toggleDropdown()
                     if opts.Callback then opts.Callback(option) end
                 end)
@@ -434,7 +446,7 @@ function Fluxcore:MakeWindow(config)
             local titleLabel = Instance.new("TextLabel", sliderFrame)
             titleLabel.Size = UDim2.new(0, 100, 1, 0)
             titleLabel.Position = UDim2.new(0, 8, 0, 0)
-            titleLabel.Text = opts.Name or "Slider"
+            titleLabel.Text = (opts.Name or "Slider"):gsub("%s+$", "")
             titleLabel.BackgroundTransparency = 1
             titleLabel.TextColor3 = Config.Theme.TextColor
             titleLabel.Font = Enum.Font.GothamSemibold
@@ -442,6 +454,8 @@ function Fluxcore:MakeWindow(config)
             titleLabel.TextXAlignment = Enum.TextXAlignment.Left
             titleLabel.TextTruncate = Enum.TextTruncate.AtEnd
             titleLabel.ClipsDescendants = true
+            local titlePadding = Instance.new("UIPadding", titleLabel)
+            titlePadding.PaddingLeft = UDim.new(0, 8)
 
             local sliderBar = Instance.new("Frame", sliderFrame)
             sliderBar.Size = UDim2.new(1, -150, 0, 6)
@@ -506,13 +520,15 @@ function Fluxcore:MakeWindow(config)
             local toggleButton = Instance.new("TextButton", toggleFrame)
             toggleButton.Size = UDim2.new(1, 0, 1, 0)
             toggleButton.BackgroundTransparency = 1
-            toggleButton.Text = opts.Name or "Toggle"
+            toggleButton.Text = (opts.Name or "Toggle"):gsub("%s+$", "")
             toggleButton.TextColor3 = Config.Theme.TextColor
             toggleButton.Font = Enum.Font.GothamSemibold
             toggleButton.TextSize = 15
             toggleButton.TextXAlignment = Enum.TextXAlignment.Left
             toggleButton.TextTruncate = Enum.TextTruncate.AtEnd
             toggleButton.ClipsDescendants = true
+            local btnPadding = Instance.new("UIPadding", toggleButton)
+            btnPadding.PaddingLeft = UDim.new(0, 8)
 
             local toggleIndicator = Instance.new("Frame", toggleFrame)
             toggleIndicator.Size = UDim2.new(0, 24, 0, 14)
@@ -561,7 +577,7 @@ function Fluxcore:MakeNotification(data)
     local msg = Instance.new("TextLabel", Gui)
     msg.Size = UDim2.new(0, 250, 0, 50)
     msg.Position = UDim2.new(1, 0, 1, -60 - (#Windows * 60))
-    msg.Text = data.Content or "Notification"
+    msg.Text = (data.Content or "Notification"):gsub("%s+$", "")
     msg.BackgroundColor3 = data.Type == "error" and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(50, 150, 50)
     msg.TextColor3 = Config.Theme.TextColor
     msg.Font = Enum.Font.GothamSemibold
@@ -570,6 +586,8 @@ function Fluxcore:MakeNotification(data)
     msg.TextXAlignment = Enum.TextXAlignment.Left
     msg.TextTruncate = Enum.TextTruncate.AtEnd
     msg.ClipsDescendants = true
+    local msgPadding = Instance.new("UIPadding", msg)
+    msgPadding.PaddingLeft = UDim.new(0, 8)
     ApplyStyle(msg, nil, true)
 
     local tween = CreateTween(msg, {Position = UDim2.new(1, -260, 1, -60 - (#Windows * 60))}, 0.4)
@@ -581,7 +599,6 @@ end
 function Fluxcore:Init()
     print("Fluxcore.Hub Initialized")
     RunService:BindToRenderStep("FluxcoreUpdate", Enum.RenderPriority.Input.Value, function()
-        -- Ensure GUI remains enabled
         if Gui and not Gui.Enabled then
             Gui.Enabled = true
         end
