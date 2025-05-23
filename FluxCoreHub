@@ -13,6 +13,7 @@ local Config = {
         SecondaryColor = Color3.fromRGB(30, 30, 30),
         AccentColor = Color3.fromRGB(0, 120, 255),
         HoverColor = Color3.fromRGB(50, 50, 50),
+        ClickColor = Color3.fromRGB(80, 80, 80), -- For button click effect
         TextColor = Color3.fromRGB(220, 220, 220),
         BorderColor = Color3.fromRGB(50, 50, 50),
         CornerRadius = UDim.new(0, 8),
@@ -21,15 +22,17 @@ local Config = {
     Animation = {
         Duration = 0.25,
         HoverDuration = 0.15,
+        ClickDuration = 0.1, -- For button click animation
         EasingStyle = Enum.EasingStyle.Sine,
         EasingDirection = Enum.EasingDirection.InOut
     },
     Sizes = {
         Window = {Width = 600, Height = 400},
         ToggleButton = {Width = 50, Height = 50},
-        TabButton = {Height = 35, Width = 104}, -- Adjusted to fit within sidebar with padding
+        TabButton = {Height = 35, Width = 104},
         ElementHeight = 32,
-        SidebarWidth = 120
+        SidebarWidth = 120,
+        ToggleIndicator = {Width = 36, Height = 16} -- Larger toggle indicator
     }
 }
 
@@ -181,7 +184,7 @@ function Fluxcore:MakeWindow(config)
     -- Top Bar
     local TopBar = Instance.new("TextLabel", MainFrame)
     TopBar.Size = UDim2.new(1, 0, 0, 40)
-    TopBar.Text = config.Name or "Fluxcore Window"
+    TopBar.Text = (config.Name or "Fluxcore Window"):gsub("%s+$", "")
     TopBar.BackgroundColor3 = Config.Theme.SecondaryColor
     TopBar.TextColor3 = Config.Theme.TextColor
     TopBar.Font = Enum.Font.GothamBlack
@@ -229,17 +232,15 @@ function Fluxcore:MakeWindow(config)
         local Tab = {}
         local TabButton = Instance.new("TextButton", SideBarScroll)
         TabButton.Size = UDim2.new(0, Config.Sizes.TabButton.Width, 0, Config.Sizes.TabButton.Height)
-        TabButton.Text = (info.Name or "Tab"):gsub("%s+$", "") -- Remove trailing spaces
+        TabButton.Text = (info.Name or "Tab"):gsub("%s+$", "")
         TabButton.BackgroundColor3 = Config.Theme.SecondaryColor
         TabButton.TextColor3 = Config.Theme.TextColor
         TabButton.Font = Enum.Font.GothamSemibold
-        TabButton.TextSize = 14 -- Slightly smaller for better fit
-        TabButton.TextXAlignment = Enum.TextXAlignment.Left
+        TabButton.TextSize = 14
+        TabButton.TextXAlignment = Enum.TextXAlignment.Center -- Center text horizontally
         TabButton.TextYAlignment = Enum.TextYAlignment.Center
         TabButton.TextTruncate = Enum.TextTruncate.AtEnd
         TabButton.ClipsDescendants = true
-        local buttonPadding = Instance.new("UIPadding", TabButton)
-        buttonPadding.PaddingLeft = UDim.new(0, 8) -- Consistent padding for text
         ApplyStyle(TabButton, UDim.new(0, 6))
 
         -- Tab Hover Effect
@@ -311,6 +312,12 @@ function Fluxcore:MakeWindow(config)
             btnPadding.PaddingLeft = UDim.new(0, 8)
             ApplyStyle(btn, UDim.new(0, 6))
             btn.MouseButton1Click:Connect(function()
+                -- Click animation
+                local clickTween = CreateTween(btn, {BackgroundColor3 = Config.Theme.ClickColor, Size = UDim2.new(1, -2, 0, Config.Sizes.ElementHeight - 2)}, Config.Animation.ClickDuration)
+                clickTween:Play()
+                clickTween.Completed:Once(function()
+                    CreateTween(btn, {BackgroundColor3 = Config.Theme.SecondaryColor, Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)}, Config.Animation.ClickDuration):Play()
+                end)
                 if opts.Callback then opts.Callback() end
             end)
             btn.MouseEnter:Connect(function()
@@ -531,16 +538,16 @@ function Fluxcore:MakeWindow(config)
             btnPadding.PaddingLeft = UDim.new(0, 8)
 
             local toggleIndicator = Instance.new("Frame", toggleFrame)
-            toggleIndicator.Size = UDim2.new(0, 24, 0, 14)
-            toggleIndicator.Position = UDim2.new(1, -30, 0.5, -7)
+            toggleIndicator.Size = UDim2.new(0, Config.Sizes.ToggleIndicator.Width, 0, Config.Sizes.ToggleIndicator.Height)
+            toggleIndicator.Position = UDim2.new(1, -Config.Sizes.ToggleIndicator.Width - 6, 0.5, -Config.Sizes.ToggleIndicator.Height/2)
             toggleIndicator.BackgroundColor3 = Config.Theme.SecondaryColor
-            ApplyStyle(toggleIndicator, UDim.new(0, 7))
+            ApplyStyle(toggleIndicator, UDim.new(0, Config.Sizes.ToggleIndicator.Height/2))
 
             local toggleInner = Instance.new("Frame", toggleIndicator)
             toggleInner.Size = UDim2.new(0.5, -2, 1, -2)
             toggleInner.Position = UDim2.new(0, 1, 0, 1)
             toggleInner.BackgroundColor3 = Config.Theme.TextColor
-            ApplyStyle(toggleInner, UDim.new(0, 6))
+            ApplyStyle(toggleInner, UDim.new(0, (Config.Sizes.ToggleIndicator.Height-2)/2))
 
             local state = opts.Default or false
 
