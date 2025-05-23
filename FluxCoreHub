@@ -13,7 +13,7 @@ local Config = {
         SecondaryColor = Color3.fromRGB(30, 30, 30),
         AccentColor = Color3.fromRGB(0, 120, 255),
         HoverColor = Color3.fromRGB(50, 50, 50),
-        ClickColor = Color3.fromRGB(80, 80, 80), -- For button click effect
+        ClickColor = Color3.fromRGB(80, 80, 80),
         TextColor = Color3.fromRGB(220, 220, 220),
         BorderColor = Color3.fromRGB(50, 50, 50),
         CornerRadius = UDim.new(0, 8),
@@ -22,7 +22,7 @@ local Config = {
     Animation = {
         Duration = 0.25,
         HoverDuration = 0.15,
-        ClickDuration = 0.1, -- For button click animation
+        ClickDuration = 0.1,
         EasingStyle = Enum.EasingStyle.Sine,
         EasingDirection = Enum.EasingDirection.InOut
     },
@@ -32,7 +32,7 @@ local Config = {
         TabButton = {Height = 35, Width = 104},
         ElementHeight = 32,
         SidebarWidth = 120,
-        ToggleIndicator = {Width = 36, Height = 16} -- Larger toggle indicator
+        ToggleIndicator = {Width = 36, Height = 16}
     }
 }
 
@@ -53,7 +53,7 @@ local function ApplyStyle(obj, radius, applyShadow)
     local corner = Instance.new("UICorner", obj)
     corner.CornerRadius = radius or Config.Theme.CornerRadius
     local stroke = Instance.new("UIStroke", obj)
-    stroke.Thickness = 1.5
+    stroke.Thickness = 2 -- Bolder for buttons and consistency
     stroke.Color = Config.Theme.BorderColor
     if applyShadow then
         local shadow = Instance.new("UIStroke", obj)
@@ -83,7 +83,7 @@ local function ClearTweens()
     ActiveTweens = {}
 end
 
--- Toggle Button Setup
+-- Toggle<Button Setup
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Size = UDim2.new(0, Config.Sizes.ToggleButton.Width, 0, Config.Sizes.ToggleButton.Height)
 ToggleButton.Position = UDim2.new(0, 10, 0.5, -25)
@@ -104,22 +104,22 @@ ToggleButton.MouseLeave:Connect(function()
     CreateTween(ToggleButton, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
 end)
 
--- Dragging Logic
-local dragging, dragStart, startPos
+-- Dragging Logic for Toggle Button
+local toggleDragging, toggleDragStart, toggleStartPos
 ToggleButton.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = ToggleButton.Position
+        toggleDragging = true
+        toggleDragStart = input.Position
+        toggleStartPos = ToggleButton.Position
     end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - dragStart
+    if toggleDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - toggleDragStart
         local newPos = UDim2.new(
-            startPos.X.Scale, math.clamp(startPos.X.Offset + delta.X, 0, Gui.AbsoluteSize.X - ToggleButton.AbsoluteSize.X),
-            startPos.Y.Scale, math.clamp(startPos.Y.Offset + delta.Y, 0, Gui.AbsoluteSize.Y - ToggleButton.AbsoluteSize.Y)
+            toggleStartPos.X.Scale, math.clamp(toggleStartPos.X.Offset + delta.X, 0, Gui.AbsoluteSize.X - ToggleButton.AbsoluteSize.X),
+            toggleStartPos.Y.Scale, math.clamp(toggleStartPos.Y.Offset + delta.Y, 0, Gui.AbsoluteSize.Y - ToggleButton.AbsoluteSize.Y)
         )
         ToggleButton.Position = newPos
     end
@@ -127,7 +127,7 @@ end)
 
 UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = false
+        toggleDragging = false
     end
 end)
 
@@ -181,7 +181,7 @@ function Fluxcore:MakeWindow(config)
 
     table.insert(Windows, MainFrame)
 
-    -- Top Bar
+    -- Top Bar (Draggable)
     local TopBar = Instance.new("TextLabel", MainFrame)
     TopBar.Size = UDim2.new(1, 0, 0, 40)
     TopBar.Text = (config.Name or "Fluxcore Window"):gsub("%s+$", "")
@@ -196,6 +196,33 @@ function Fluxcore:MakeWindow(config)
     TopBar.ClipsDescendants = true
     ApplyStyle(TopBar)
 
+    -- Dragging Logic for MainFrame
+    local windowDragging, windowDragStart, windowStartPos
+    TopBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            windowDragging = true
+            windowDragStart = input.Position
+            windowStartPos = MainFrame.Position
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if windowDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - windowDragStart
+            local newPos = UDim2.new(
+                windowStartPos.X.Scale, math.clamp(windowStartPos.X.Offset + delta.X, -Config.Sizes.Window.Width/2, Gui.AbsoluteSize.X - Config.Sizes.Window.Width/2),
+                windowStartPos.Y.Scale, math.clamp(windowStartPos.Y.Offset + delta.Y, -Config.Sizes.Window.Height/2, Gui.AbsoluteSize.Y - Config.Sizes.Window.Height/2)
+            )
+            MainFrame.Position = newPos
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            windowDragging = false
+        end
+    end)
+
     -- Sidebar
     local SideBarScroll = Instance.new("ScrollingFrame", MainFrame)
     SideBarScroll.Size = UDim2.new(0, Config.Sizes.SidebarWidth, 1, -40)
@@ -206,6 +233,7 @@ function Fluxcore:MakeWindow(config)
     SideBarScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
     SideBarScroll.ScrollingDirection = Enum.ScrollingDirection.Y
     SideBarScroll.ClipsDescendants = true
+    SideBarScroll.ScrollingEnabled = true -- Ensure scrolling is enabled
     ApplyStyle(SideBarScroll)
 
     local TabButtonLayout = Instance.new("UIListLayout", SideBarScroll)
@@ -237,7 +265,7 @@ function Fluxcore:MakeWindow(config)
         TabButton.TextColor3 = Config.Theme.TextColor
         TabButton.Font = Enum.Font.GothamSemibold
         TabButton.TextSize = 14
-        TabButton.TextXAlignment = Enum.TextXAlignment.Center -- Center text horizontally
+        TabButton.TextXAlignment = Enum.TextXAlignment.Center
         TabButton.TextYAlignment = Enum.TextYAlignment.Center
         TabButton.TextTruncate = Enum.TextTruncate.AtEnd
         TabButton.ClipsDescendants = true
@@ -261,8 +289,17 @@ function Fluxcore:MakeWindow(config)
         Content.BackgroundColor3 = Config.Theme.SecondaryColor
         Content.Visible = false
         Content.ScrollBarThickness = 3
+        Content.CanvasSize = UDim2.new(0, 0, 0, 0)
         Content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        Content.ScrollingDirection = Enum.ScrollingDirection.Y
         Content.ClipsDescendants = true
+        -- Conditional scrolling
+        Content:GetPropertyChangedSignal("CanvasSize"):Connect(function()
+            local contentHeight = Content.CanvasSize.Y.Offset
+            local frameHeight = Content.AbsoluteSize.Y
+            Content.ScrollingEnabled = contentHeight > frameHeight
+            Content.ScrollBarImageTransparency = contentHeight > frameHeight and 0 or 1
+        end)
         ApplyStyle(Content)
 
         local layout = Instance.new("UIListLayout", Content)
@@ -311,6 +348,16 @@ function Fluxcore:MakeWindow(config)
             local btnPadding = Instance.new("UIPadding", btn)
             btnPadding.PaddingLeft = UDim.new(0, 8)
             ApplyStyle(btn, UDim.new(0, 6))
+
+            -- Underline effect
+            local underline = Instance.new("Frame", btn)
+            underline.Size = UDim2.new(1, -16, 0, 2)
+            underline.Position = UDim2.new(0, 8, 1, -4)
+            underline.BackgroundColor3 = Config.Theme.AccentColor
+            underline.Visible = false
+            local ulCorner = Instance.new("UICorner", underline)
+            ulCorner.CornerRadius = UDim.new(0, 2)
+
             btn.MouseButton1Click:Connect(function()
                 -- Click animation
                 local clickTween = CreateTween(btn, {BackgroundColor3 = Config.Theme.ClickColor, Size = UDim2.new(1, -2, 0, Config.Sizes.ElementHeight - 2)}, Config.Animation.ClickDuration)
@@ -322,9 +369,11 @@ function Fluxcore:MakeWindow(config)
             end)
             btn.MouseEnter:Connect(function()
                 CreateTween(btn, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration):Play()
+                underline.Visible = true
             end)
             btn.MouseLeave:Connect(function()
                 CreateTween(btn, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+                underline.Visible = false
             end)
         end
 
