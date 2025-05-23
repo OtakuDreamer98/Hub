@@ -619,7 +619,44 @@ function Fluxcore:MakeWindow(config)
 
             updateVisual()
         end
+        
+        function Tab:AddDisplayText(opts)
+    local displayFrame = Instance.new("Frame", Content)
+    displayFrame.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
+    displayFrame.BackgroundColor3 = Config.Theme.SecondaryColor
+    displayFrame.ClipsDescendants = true
+    ApplyStyle(displayFrame, UDim.new(0, 6))
 
+    local displayLabel = Instance.new("TextLabel", displayFrame)
+    displayLabel.Size = UDim2.new(1, 0, 1, 0)
+    displayLabel.BackgroundTransparency = 1
+    displayLabel.Text = (opts.Text or ""):gsub("%s+$", "")
+    displayLabel.TextColor3 = Config.Theme.TextColor
+    displayLabel.Font = Enum.Font.GothamSemibold
+    displayLabel.TextSize = 15
+    displayLabel.TextXAlignment = Enum.TextXAlignment.Left
+    displayLabel.TextTruncate = Enum.TextTruncate.AtEnd
+    displayLabel.ClipsDescendants = true
+    local lblPadding = Instance.new("UIPadding", displayLabel)
+    lblPadding.PaddingLeft = UDim.new(0, 8)
+
+    -- Hover effect
+    displayFrame.MouseEnter:Connect(function()
+        CreateTween(displayFrame, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration):Play()
+    end)
+    displayFrame.MouseLeave:Connect(function()
+        CreateTween(displayFrame, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+    end)
+
+    -- Optional: Store connections for cleanup
+    local connections = {}
+    table.insert(connections, displayFrame.MouseEnter)
+    table.insert(connections, displayFrame.MouseLeave)
+
+    -- Return the label for external updates
+    return displayLabel
+end
+               
         Tab.Button = TabButton
         table.insert(Tabs, Tab)
         return Tab
