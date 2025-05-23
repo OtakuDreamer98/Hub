@@ -9,13 +9,13 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 -- Configuration
 local Config = {
     Theme = {
-        PrimaryColor = Color3.fromRGB(20, 20, 20), -- Darker base
-        SecondaryColor = Color3.fromRGB(30, 30, 30), -- Slightly lighter for contrast
-        AccentColor = Color3.fromRGB(0, 120, 255), -- Brighter accent for highlights
-        HoverColor = Color3.fromRGB(50, 50, 50), -- Hover effect color
-        TextColor = Color3.fromRGB(220, 220, 220), -- Softer white for text
+        PrimaryColor = Color3.fromRGB(20, 20, 20),
+        SecondaryColor = Color3.fromRGB(30, 30, 30),
+        AccentColor = Color3.fromRGB(0, 120, 255),
+        HoverColor = Color3.fromRGB(50, 50, 50),
+        TextColor = Color3.fromRGB(220, 220, 220),
         BorderColor = Color3.fromRGB(50, 50, 50),
-        CornerRadius = UDim.new(0, 8), -- Slightly larger radius for modern look
+        CornerRadius = UDim.new(0, 8),
         ShadowTransparency = 0.4
     },
     Animation = {
@@ -27,8 +27,9 @@ local Config = {
     Sizes = {
         Window = {Width = 600, Height = 400},
         ToggleButton = {Width = 50, Height = 50},
-        TabButton = {Height = 35},
-        ElementHeight = 32
+        TabButton = {Height = 35, Width = 110}, -- Fixed width for tabs
+        ElementHeight = 32,
+        SidebarWidth = 120
     }
 }
 
@@ -141,9 +142,7 @@ local function AnimateWindow(window, show)
         }):Play()
     else
         local tween = CreateTween(window, {
-            Size = UDim2.new(0, 0, 0, 0),
-            Position = UDim2.new(0.5, 0, 0.5, 0),
-            BackgroundTransparency = 1
+            Size = UDim2.new(0, snip
         })
         tween:Play()
         tween.Completed:Once(function()
@@ -170,6 +169,7 @@ function Fluxcore:MakeWindow(config)
     MainFrame.Active = true
     MainFrame.Visible = false
     MainFrame.Name = config.Name or "Window"
+    MainFrame.ClipsDescendants = true -- Prevent overflow
     MainFrame.Parent = Gui
     ApplyStyle(MainFrame, nil, true)
 
@@ -185,18 +185,20 @@ function Fluxcore:MakeWindow(config)
     TopBar.TextSize = 20
     TopBar.TextXAlignment = Enum.TextXAlignment.Left
     TopBar.TextYAlignment = Enum.TextYAlignment.Center
-    TopBar.Position = UDim2.new(0, 10, 0, 0) -- Slight padding
+    TopBar.Position = UDim2.new(0, 10, 0, 0)
+    TopBar.TextTruncate = Enum.TextTruncate.AtEnd -- Prevent text overflow
     ApplyStyle(TopBar)
 
     -- Sidebar
     local SideBarScroll = Instance.new("ScrollingFrame", MainFrame)
-    SideBarScroll.Size = UDim2.new(0, 120, 1, -40)
+    SideBarScroll.Size = UDim2.new(0, Config.Sizes.SidebarWidth, 1, -40)
     SideBarScroll.Position = UDim2.new(0, 0, 0, 40)
     SideBarScroll.BackgroundColor3 = Config.Theme.PrimaryColor
     SideBarScroll.ScrollBarThickness = 3
     SideBarScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
     SideBarScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
     SideBarScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+    SideBarScroll.ClipsDescendants = true
     ApplyStyle(SideBarScroll)
 
     local TabButtonLayout = Instance.new("UIListLayout", SideBarScroll)
@@ -205,12 +207,14 @@ function Fluxcore:MakeWindow(config)
     SideBarPadding.PaddingTop = UDim.new(0, 5)
     SideBarPadding.PaddingBottom = UDim.new(0, 5)
     SideBarPadding.PaddingLeft = UDim.new(0, 5)
+    SideBarPadding.PaddingRight = UDim.new(0, 5)
 
     -- Content Area
     local ContentArea = Instance.new("Frame", MainFrame)
-    ContentArea.Size = UDim2.new(1, -120, 1, -40)
-    ContentArea.Position = UDim2.new(0, 120, 0, 40)
+    ContentArea.Size = UDim2.new(1, -Config.Sizes.SidebarWidth, 1, -40)
+    ContentArea.Position = UDim2.new(0, Config.Sizes.SidebarWidth, 0, 40)
     ContentArea.BackgroundColor3 = Config.Theme.SecondaryColor
+    ContentArea.ClipsDescendants = true
     ApplyStyle(ContentArea)
 
     local Tabs = {}
@@ -220,14 +224,16 @@ function Fluxcore:MakeWindow(config)
     function Window:MakeTab(info)
         local Tab = {}
         local TabButton = Instance.new("TextButton", SideBarScroll)
-        TabButton.Size = UDim2.new(1, -10, 0, Config.Sizes.TabButton.Height)
+        TabButton.Size = UDim2.new(0, Config.Sizes.TabButton.Width, 0, Config.Sizes.TabButton.Height)
         TabButton.Text = info.Name or "Tab"
         TabButton.BackgroundColor3 = Config.Theme.SecondaryColor
         TabButton.TextColor3 = Config.Theme.TextColor
         TabButton.Font = Enum.Font.GothamSemibold
-        TabButton.TextSize = 16
+        TabButton.TextSize = 15
         TabButton.TextXAlignment = Enum.TextXAlignment.Left
-        TabButton.Position = UDim2.new(0, 5, 0, 0)
+        TabButton.TextYAlignment = Enum.TextYAlignment.Center
+        TabButton.TextTruncate = Enum.TextTruncate.AtEnd -- Prevent text overflow
+        TabButton.ClipsDescendants = true
         ApplyStyle(TabButton, UDim.new(0, 6))
 
         -- Tab Hover Effect
@@ -249,6 +255,7 @@ function Fluxcore:MakeWindow(config)
         Content.Visible = false
         Content.ScrollBarThickness = 3
         Content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        Content.ClipsDescendants = true
         ApplyStyle(Content)
 
         local layout = Instance.new("UIListLayout", Content)
@@ -291,6 +298,9 @@ function Fluxcore:MakeWindow(config)
             btn.TextColor3 = Config.Theme.TextColor
             btn.Font = Enum.Font.GothamSemibold
             btn.TextSize = 15
+            btn.TextXAlignment = Enum.TextXAlignment.Left
+            btn.TextTruncate = Enum.TextTruncate.AtEnd
+            btn.ClipsDescendants = true
             ApplyStyle(btn, UDim.new(0, 6))
             btn.MouseButton1Click:Connect(function()
                 if opts.Callback then opts.Callback() end
@@ -312,6 +322,8 @@ function Fluxcore:MakeWindow(config)
             lbl.Font = Enum.Font.GothamSemibold
             lbl.TextSize = 15
             lbl.TextXAlignment = Enum.TextXAlignment.Left
+            lbl.TextTruncate = Enum.TextTruncate.AtEnd
+            lbl.ClipsDescendants = true
         end
 
         function Tab:AddTextbox(opts)
@@ -322,7 +334,10 @@ function Fluxcore:MakeWindow(config)
             box.TextColor3 = Config.Theme.TextColor
             box.Font = Enum.Font.GothamSemibold
             box.TextSize = 15
+            box.TextXAlignment = Enum.TextXAlignment.Left
+            box.TextTruncate = Enum.TextTruncate.AtEnd
             box.BackgroundColor3 = Config.Theme.PrimaryColor
+            box.ClipsDescendants = true
             ApplyStyle(box, UDim.new(0, 6))
             box.FocusLost:Connect(function()
                 if opts.Callback then opts.Callback(box.Text) end
@@ -339,6 +354,7 @@ function Fluxcore:MakeWindow(config)
             local dropdownFrame = Instance.new("Frame", Content)
             dropdownFrame.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
             dropdownFrame.BackgroundColor3 = Config.Theme.SecondaryColor
+            dropdownFrame.ClipsDescendants = true
             ApplyStyle(dropdownFrame, UDim.new(0, 6))
 
             local dropdownButton = Instance.new("TextButton", dropdownFrame)
@@ -349,6 +365,8 @@ function Fluxcore:MakeWindow(config)
             dropdownButton.Font = Enum.Font.GothamSemibold
             dropdownButton.TextSize = 15
             dropdownButton.TextXAlignment = Enum.TextXAlignment.Left
+            dropdownButton.TextTruncate = Enum.TextTruncate.AtEnd
+            dropdownButton.ClipsDescendants = true
 
             local dropdownList = Instance.new("Frame", Content)
             dropdownList.Size = UDim2.new(1, 0, 0, 0)
@@ -384,6 +402,9 @@ function Fluxcore:MakeWindow(config)
                 optionButton.TextColor3 = Config.Theme.TextColor
                 optionButton.Font = Enum.Font.Gotham
                 optionButton.TextSize = 14
+                optionButton.TextXAlignment = Enum.TextXAlignment.Left
+                optionButton.TextTruncate = Enum.TextTruncate.AtEnd
+                optionButton.ClipsDescendants = true
                 ApplyStyle(optionButton, UDim.new(0, 6))
                 optionButton.MouseButton1Click:Connect(function()
                     dropdownButton.Text = option
@@ -403,6 +424,7 @@ function Fluxcore:MakeWindow(config)
             local sliderFrame = Instance.new("Frame", Content)
             sliderFrame.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight + 10)
             sliderFrame.BackgroundColor3 = Config.Theme.SecondaryColor
+            sliderFrame.ClipsDescendants = true
             ApplyStyle(sliderFrame, UDim.new(0, 6))
 
             local titleLabel = Instance.new("TextLabel", sliderFrame)
@@ -414,11 +436,14 @@ function Fluxcore:MakeWindow(config)
             titleLabel.Font = Enum.Font.GothamSemibold
             titleLabel.TextSize = 15
             titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+            titleLabel.TextTruncate = Enum.TextTruncate.AtEnd
+            titleLabel.ClipsDescendants = true
 
             local sliderBar = Instance.new("Frame", sliderFrame)
-            sliderBar.Size = UDim2.new(1, -120, 0, 6)
+            sliderBar.Size = UDim2.new(1, -150, 0, 6)
             sliderBar.Position = UDim2.new(0, 110, 0.5, -3)
             sliderBar.BackgroundColor3 = Config.Theme.PrimaryColor
+            sliderBar.ClipsDescendants = true
             ApplyStyle(sliderBar, UDim.new(0, 3))
 
             local fill = Instance.new("Frame", sliderBar)
@@ -433,7 +458,8 @@ function Fluxcore:MakeWindow(config)
             valueLabel.TextColor3 = Config.Theme.TextColor
             valueLabel.Font = Enum.Font.Gotham
             valueLabel.TextSize = 14
-            valueLabel.Text = opts.Default or opts.Min or 0
+            valueLabel.Text = string.format("%.2f", opts.Default or opts.Min or 0)
+            valueLabel.TextTruncate = Enum.TextTruncate.AtEnd
 
             local value = opts.Default or opts.Min or 0
             local dragging = false
@@ -468,8 +494,11 @@ function Fluxcore:MakeWindow(config)
 
         function Tab:AddToggle(opts)
             local toggleFrame = Instance.new("Frame", Content)
-            toggleFrame.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
+            toggleFrame.Size = UDim
+
+2.new(1, 0, 0, Config.Sizes.ElementHeight)
             toggleFrame.BackgroundColor3 = Config.Theme.SecondaryColor
+            toggleFrame.ClipsDescendants = true
             ApplyStyle(toggleFrame, UDim.new(0, 6))
 
             local toggleButton = Instance.new("TextButton", toggleFrame)
@@ -480,6 +509,8 @@ function Fluxcore:MakeWindow(config)
             toggleButton.Font = Enum.Font.GothamSemibold
             toggleButton.TextSize = 15
             toggleButton.TextXAlignment = Enum.TextXAlignment.Left
+            toggleButton.TextTruncate = Enum.TextTruncate.AtEnd
+            toggleButton.ClipsDescendants = true
 
             local toggleIndicator = Instance.new("Frame", toggleFrame)
             toggleIndicator.Size = UDim2.new(0, 24, 0, 14)
@@ -527,7 +558,7 @@ end
 function Fluxcore:MakeNotification(data)
     local msg = Instance.new("TextLabel", Gui)
     msg.Size = UDim2.new(0, 250, 0, 50)
-    msg.Position = UDim2.new(1, -260, 1, -60 - (#Windows * 60))
+    msg.Position = UDim2.new(1, 0, 1, -60 - (#Windows * 60))
     msg.Text = data.Content or "Notification"
     msg.BackgroundColor3 = data.Type == "error" and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(50, 150, 50)
     msg.TextColor3 = Config.Theme.TextColor
@@ -535,7 +566,8 @@ function Fluxcore:MakeNotification(data)
     msg.TextSize = 14
     msg.TextWrapped = true
     msg.TextXAlignment = Enum.TextXAlignment.Left
-    msg.Position = UDim2.new(1, 0, 1, -60 - (#Windows * 60)) -- Start off-screen
+    msg.TextTruncate = Enum.TextTruncate.AtEnd
+    msg.ClipsDescendants = true
     ApplyStyle(msg, nil, true)
 
     local tween = CreateTween(msg, {Position = UDim2.new(1, -260, 1, -60 - (#Windows * 60))}, 0.4)
