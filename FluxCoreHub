@@ -4,7 +4,7 @@ local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui", 5)
 
 -- Configuration
 local Config = {
@@ -41,9 +41,14 @@ local Gui = Instance.new("ScreenGui")
 Gui.Name = "Fluxcore.Hub"
 Gui.ResetOnSpawn = false
 Gui.IgnoreGuiInset = true
-Gui.DisplayOrder = 10
+Gui.DisplayOrder = 100 -- Increased to avoid overlap
 Gui.Enabled = true
-Gui.Parent = PlayerGui
+if PlayerGui then
+    Gui.Parent = PlayerGui
+    print("Gui parented to PlayerGui")
+else
+    warn("PlayerGui not found!")
+end
 
 local Windows = {}
 local ActiveTweens = {}
@@ -74,13 +79,14 @@ local function CreateTween(obj, properties, duration)
     return tween
 end
 
-local function ClearTweens()
-    for _, tween in ipairs(ActiveTweens) do
-        if tween.PlaybackState == Enum.PlaybackState.Playing then
+local function ClearTweens(exclude)
+    for i = #ActiveTweens, 1, -1 do
+        local tween = ActiveTweens[i]
+        if tween.PlaybackState == Enum.PlaybackState.Playing and (not exclude or tween ~= exclude) then
             tween:Cancel()
+            table.remove(ActiveTweens, i)
         end
     end
-    ActiveTweens = {}
 end
 
 -- Toggle Button Setup
@@ -684,17 +690,18 @@ end
 
 -- Splash Screen Function
 function Fluxcore:ShowSplashScreen()
+    print("Creating splash screen")
     local splash = Instance.new("Frame", Gui)
     splash.Size = UDim2.new(0, 300, 0, 150)
     splash.Position = UDim2.new(0.5, -150, 0.5, -75)
     splash.BackgroundColor3 = Config.Theme.PrimaryColor
     splash.ZIndex = 1000
-    splash.ClipsDescendants = true
+    splash.ClipsDescendants = false -- Disabled to prevent clipping
     ApplyStyle(splash, nil, true)
+    print("Splash created, parent:", splash.Parent, "visible:", splash.Visible)
 
     local title = Instance.new("TextLabel", splash)
     title.Size = UDim2.new(1, 0, 0.6, 0)
-    title.Position = UDim2.new(0, 0, 0, 0)
     title.BackgroundTransparency = 1
     title.Text = "FluxCore.Hub"
     title.TextColor3 = Config.Theme.TextColor
@@ -714,7 +721,7 @@ function Fluxcore:ShowSplashScreen()
     credit.TextXAlignment = Enum.TextXAlignment.Center
     credit.TextYAlignment = Enum.TextYAlignment.Center
 
-    -- Entry animation: Scale up and fade in
+    -- Entry animation
     splash.BackgroundTransparency = 1
     title.TextTransparency = 1
     credit.TextTransparency = 1
@@ -725,12 +732,17 @@ function Fluxcore:ShowSplashScreen()
     }, 0.5)
     local titleFadeIn = CreateTween(title, {TextTransparency = 0}, 0.5)
     local creditFadeIn = CreateTween(credit, {TextTransparency = 0}, 0.5)
+    print("Starting fade-in tweens")
     fadeIn:Play()
     titleFadeIn:Play()
     creditFadeIn:Play()
+    fadeIn.Completed:Connect(function()
+        print("Fade-in completed")
+    end)
 
-    -- Exit animation after 3 seconds: Scale down and fade out
+    -- Exit animation
     task.delay(3, function()
+        print("Starting fade-out tweens")
         local fadeOut = CreateTween(splash, {
             BackgroundTransparency = 1,
             Size = UDim2.new(0, 0, 0, 0)
@@ -741,6 +753,7 @@ function Fluxcore:ShowSplashScreen()
         titleFadeOut:Play()
         creditFadeOut:Play()
         fadeOut.Completed:Once(function()
+            print("Splash destroyed")
             splash:Destroy()
         end)
     end)
@@ -748,11 +761,19 @@ end
 
 -- Initialization and Cleanup
 function Fluxcore:Init()
-    print("Fluxcore.Hub Initialized")
+    print("Starting Fluxcore:Init")
+    task.wait(1) -- Wait for game to stabilize
+    if not Gui.Parent and PlayerGui then
+        Gui.Parent = PlayerGui
+        print("Set Gui.Parent to PlayerGui")
+    end
+    Gui.Enabled = true
+    print("Gui.Enabled:", Gui.Enabled)
     Fluxcore:ShowSplashScreen()
     RunService:BindToRenderStep("FluxcoreUpdate", Enum.RenderPriority.Input.Value, function()
         if Gui and not Gui.Enabled then
             Gui.Enabled = true
+            print("Re-enabled Gui")
         end
     end)
 end
