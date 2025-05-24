@@ -4,7 +4,7 @@ local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui", 5)
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 -- Configuration
 local Config = {
@@ -41,14 +41,9 @@ local Gui = Instance.new("ScreenGui")
 Gui.Name = "Fluxcore.Hub"
 Gui.ResetOnSpawn = false
 Gui.IgnoreGuiInset = true
-Gui.DisplayOrder = 100
+Gui.DisplayOrder = 10
 Gui.Enabled = true
-if PlayerGui then
-    Gui.Parent = PlayerGui
-    print("Gui parented to PlayerGui")
-else
-    warn("PlayerGui not found!")
-end
+Gui.Parent = PlayerGui
 
 local Windows = {}
 local ActiveTweens = {}
@@ -58,7 +53,7 @@ local function ApplyStyle(obj, radius, applyShadow)
     local corner = Instance.new("UICorner", obj)
     corner.CornerRadius = radius or Config.Theme.CornerRadius
     local stroke = Instance.new("UIStroke", obj)
-    stroke.Thickness = 2
+    stroke.Thickness = 2 -- Bolder for buttons and consistency
     stroke.Color = Config.Theme.BorderColor
     if applyShadow then
         local shadow = Instance.new("UIStroke", obj)
@@ -79,17 +74,16 @@ local function CreateTween(obj, properties, duration)
     return tween
 end
 
-local function ClearTweens(exclude)
-    for i = #ActiveTweens, 1, -1 do
-        local tween = ActiveTweens[i]
-        if tween.PlaybackState == Enum.PlaybackState.Playing and (not exclude or tween ~= exclude) then
+local function ClearTweens()
+    for _, tween in ipairs(ActiveTweens) do
+        if tween.PlaybackState == Enum.PlaybackState.Playing then
             tween:Cancel()
-            table.remove(ActiveTweens, i)
         end
     end
+    ActiveTweens = {}
 end
 
--- Toggle Button Setup
+-- Toggle<Button Setup
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Size = UDim2.new(0, Config.Sizes.ToggleButton.Width, 0, Config.Sizes.ToggleButton.Height)
 ToggleButton.Position = UDim2.new(0, 10, 0.5, -25)
@@ -239,7 +233,7 @@ function Fluxcore:MakeWindow(config)
     SideBarScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
     SideBarScroll.ScrollingDirection = Enum.ScrollingDirection.Y
     SideBarScroll.ClipsDescendants = true
-    SideBarScroll.ScrollingEnabled = true
+    SideBarScroll.ScrollingEnabled = true -- Ensure scrolling is enabled
     ApplyStyle(SideBarScroll)
 
     local TabButtonLayout = Instance.new("UIListLayout", SideBarScroll)
@@ -299,6 +293,7 @@ function Fluxcore:MakeWindow(config)
         Content.AutomaticCanvasSize = Enum.AutomaticSize.Y
         Content.ScrollingDirection = Enum.ScrollingDirection.Y
         Content.ClipsDescendants = true
+        -- Conditional scrolling
         Content:GetPropertyChangedSignal("CanvasSize"):Connect(function()
             local contentHeight = Content.CanvasSize.Y.Offset
             local frameHeight = Content.AbsoluteSize.Y
@@ -354,6 +349,7 @@ function Fluxcore:MakeWindow(config)
             btnPadding.PaddingLeft = UDim.new(0, 8)
             ApplyStyle(btn, UDim.new(0, 6))
 
+            -- Underline effect
             local underline = Instance.new("Frame", btn)
             underline.Size = UDim2.new(1, -16, 0, 2)
             underline.Position = UDim2.new(0, 8, 1, -4)
@@ -363,6 +359,7 @@ function Fluxcore:MakeWindow(config)
             ulCorner.CornerRadius = UDim.new(0, 2)
 
             btn.MouseButton1Click:Connect(function()
+                -- Click animation
                 local clickTween = CreateTween(btn, {BackgroundColor3 = Config.Theme.ClickColor, Size = UDim2.new(1, -2, 0, Config.Sizes.ElementHeight - 2)}, Config.Animation.ClickDuration)
                 clickTween:Play()
                 clickTween.Completed:Once(function()
@@ -443,7 +440,7 @@ function Fluxcore:MakeWindow(config)
 
             local dropdownList = Instance.new("Frame", Content)
             dropdownList.Size = UDim2.new(1, 0, 0, 0)
-            dropdownList.BackgroundColor3 =喷射 Theme.SecondaryColor
+            dropdownList.BackgroundColor3 = Config.Theme.SecondaryColor
             dropdownList.ClipsDescendants = true
             dropdownList.Visible = false
             ApplyStyle(dropdownList, UDim.new(0, 6))
@@ -456,7 +453,7 @@ function Fluxcore:MakeWindow(config)
                 expanded = not expanded
                 dropdownList.Visible = expanded
                 dropdownList.Size = expanded and UDim2.new(1, 0, 0, #opts.Options * Config.Sizes.ElementHeight) or UDim2.new(1, 0, 0, 0)
-                CreateTween(dropdownList, {BackgroundTransparency = expanded and 0 or 1}, Config Animation.HoverDuration):Play()
+                CreateTween(dropdownList, {BackgroundTransparency = expanded and 0 or 1}, Config.Animation.HoverDuration):Play()
             end
 
             dropdownButton.MouseButton1Click:Connect(toggleDropdown)
@@ -622,41 +619,44 @@ function Fluxcore:MakeWindow(config)
 
             updateVisual()
         end
-
+        
         function Tab:AddDisplayText(opts)
-            local displayFrame = Instance.new("Frame", Content)
-            displayFrame.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
-            displayFrame.BackgroundColor3 = Config.Theme.SecondaryColor
-            displayFrame.ClipsDescendants = true
-            ApplyStyle(displayFrame, UDim.new(0, 6))
+    local displayFrame = Instance.new("Frame", Content)
+    displayFrame.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
+    displayFrame.BackgroundColor3 = Config.Theme.SecondaryColor
+    displayFrame.ClipsDescendants = true
+    ApplyStyle(displayFrame, UDim.new(0, 6))
 
-            local displayLabel = Instance.new("TextLabel", displayFrame)
-            displayLabel.Size = UDim2.new(1, 0, 1, 0)
-            displayLabel.BackgroundTransparency = 1
-            displayLabel.Text = (opts.Text or ""):gsub("%s+$", "")
-            displayLabel.TextColor3 = Config.Theme.TextColor
-            displayLabel.Font = Enum.Font.GothamSemibold
-            displayLabel.TextSize = 15
-            displayLabel.TextXAlignment = Enum.TextXAlignment.Left
-            displayLabel.TextTruncate = Enum.TextTruncate.AtEnd
-            displayLabel.ClipsDescendants = true
-            local lblPadding = Instance.new("UIPadding", displayLabel)
-            lblPadding.PaddingLeft = UDim.new(0, 8)
+    local displayLabel = Instance.new("TextLabel", displayFrame)
+    displayLabel.Size = UDim2.new(1, 0, 1, 0)
+    displayLabel.BackgroundTransparency = 1
+    displayLabel.Text = (opts.Text or ""):gsub("%s+$", "")
+    displayLabel.TextColor3 = Config.Theme.TextColor
+    displayLabel.Font = Enum.Font.GothamSemibold
+    displayLabel.TextSize = 15
+    displayLabel.TextXAlignment = Enum.TextXAlignment.Left
+    displayLabel.TextTruncate = Enum.TextTruncate.AtEnd
+    displayLabel.ClipsDescendants = true
+    local lblPadding = Instance.new("UIPadding", displayLabel)
+    lblPadding.PaddingLeft = UDim.new(0, 8)
 
-            displayFrame.MouseEnter:Connect(function()
-                CreateTween(displayFrame, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration):Play()
-            end)
-            displayFrame.MouseLeave:Connect(function()
-                CreateTween(displayFrame, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
-            end)
+    -- Hover effect
+    displayFrame.MouseEnter:Connect(function()
+        CreateTween(displayFrame, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration):Play()
+    end)
+    displayFrame.MouseLeave:Connect(function()
+        CreateTween(displayFrame, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+    end)
 
-            local connections = {}
-            table.insert(connections, displayFrame.MouseEnter)
-            table.insert(connections, displayFrame.MouseLeave)
+    -- Optional: Store connections for cleanup
+    local connections = {}
+    table.insert(connections, displayFrame.MouseEnter)
+    table.insert(connections, displayFrame.MouseLeave)
 
-            return displayLabel
-        end
-
+    -- Return the label for external updates
+    return displayLabel
+end
+               
         Tab.Button = TabButton
         table.insert(Tabs, Tab)
         return Tab
@@ -688,83 +688,12 @@ function Fluxcore:MakeNotification(data)
     game:GetService("Debris"):AddItem(msg, data.Time or 3)
 end
 
--- Splash Screen Function
-function Fluxcore:ShowSplashScreen()
-    print("Creating splash screen")
-    local screenSize = Gui.AbsoluteSize
-    local scaleWidth = 0.5
-    local scaleHeight = 0.3
-    local minWidth = 300
-    local minHeight = 150
-    local splashWidth = math.max(minWidth, screenSize.X * scaleWidth)
-    local splashHeight = math.max(minHeight, screenSize.Y * scaleHeight)
-
-    local splash = Instance.new("Frame", Gui)
-    splash.Size = UDim2.new(0, 0, 0, 0)
-    splash.Position = UDim2.new(0.5, -splashWidth/2, 0.5, -splashHeight/2)
-    splash.BackgroundColor3 = Config.Theme.PrimaryColor
-    splash.ZIndex = 1000
-    splash.ClipsDescendants = false
-    ApplyStyle(splash, nil, true)
-    print("Splash created, parent:", splash.Parent, "visible:", splash.Visible, "size:", splashWidth, "x", splashHeight)
-
-    local title = Instance.new("TextLabel", splash)
-    title.Size = UDim2.new(1, 0, 1, 0)
-    title.BackgroundTransparency = 1
-    title.Text = "FluxCore.Hub"
-    title.TextColor3 = Config.Theme.TextColor
-    title.Font = Enum.Font.GothamBlack
-    title.TextSize = 36
-    title.TextXAlignment = Enum.TextXAlignment.Center
-    title.TextYAlignment = Enum.TextYAlignment.Center
-    title.TextTransparency = 1
-    print("Title created, text:", title.Text, "transparency:", title.TextTransparency)
-
-    -- Entry animation
-    local fadeIn = CreateTween(splash, {
-        BackgroundTransparency = 0,
-        Size = UDim2.new(0, splashWidth, 0, splashHeight)
-    }, 0.5)
-    local titleFadeIn = CreateTween(title, {TextTransparency = 0}, 0.5)
-    print("Starting fade-in tweens")
-    fadeIn:Play()
-    titleFadeIn:Play()
-    fadeIn.Completed:Connect(function()
-        print("Fade-in completed")
-    end)
-
-    -- Exit animation
-    task.delay(3, function()
-        print("Starting fade-out tweens")
-        local fadeOut = CreateTween(splash, {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(0, 0, 0, 0)
-        }, 0.5)
-        local titleFadeOut = CreateTween(title, {TextTransparency = 1}, 0.5)
-        fadeOut:Play()
-        titleFadeOut:Play()
-        fadeOut.Completed:Once(function()
-            print("Splash destroyed")
-            splash:Destroy()
-        end)
-    end)
-end
-
 -- Initialization and Cleanup
 function Fluxcore:Init()
-    print("Starting Fluxcore:Init")
-    task.wait(1)
-    if not Gui.Parent and PlayerGui then
-        Gui.Parent = PlayerGui
-        print("Set Gui.Parent to PlayerGui")
-    end
-    Gui.Enabled = true
-    print("Gui.Enabled:", Gui.Enabled)
-    Fluxcore:ShowSplashScreen()
+    print("Fluxcore.Hub Initialized")
     RunService:BindToRenderStep("FluxcoreUpdate", Enum.RenderPriority.Input.Value, function()
         if Gui and not Gui.Enabled then
             Gui.Enabled = true
-            print("Re-enabled Gui")
         end
     end)
 end
