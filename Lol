@@ -1,0 +1,2465 @@
+-- Load the Fluxcore library
+local success, DemonLib = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/OtakuDreamer98/Hub/refs/heads/main/FluxCoreHub"))()
+end)
+
+if not success then
+    warn("Failed to load Fluxcore library: ", DemonLib)
+    return
+end
+
+-- Initialize Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local Cam = workspace.CurrentCamera
+
+-- Wait for PlayerGui
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui", 10)
+if not PlayerGui then
+    warn("PlayerGui not found!")
+    return
+end
+
+-- Fluxcore Library (embedded for reliability)
+local Fluxcore = {}
+local TweenService = game:GetService("TweenService")
+local Config = {
+    Theme = {
+        PrimaryColor = Color3.fromRGB(20, 20, 20),
+        SecondaryColor = Color3.fromRGB(30, 30, 30),
+        AccentColor = Color3.fromRGB(0, 120, 255),
+        HoverColor = Color3.fromRGB(50, 50, 50),
+        ClickColor = Color3.fromRGB(80, 80, 80),
+        TextColor = Color3.fromRGB(220, 220, 220),
+        BorderColor = Color3.fromRGB(50, 50, 50),
+        CornerRadius = UDim.new(0, 8),
+        ShadowTransparency = 0.4
+    },
+    Animation = {
+        Duration = 0.25,
+        HoverDuration = 0.15,
+        ClickDuration = 0.1,
+        EasingStyle = Enum.EasingStyle.Sine,
+        EasingDirection = Enum.EasingDirection.InOut
+    },
+    Sizes = {
+        Window = {Width = 600, Height = 400},
+        ToggleButton = {Width = 50, Height = 50},
+        TabButton = {Height = 35, Width = 104},
+        ElementHeight = 32,
+        SidebarWidth = 120,
+        ToggleIndicator = {Width = 36, Height = 16}
+    }
+}
+
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "Fluxcore.Hub"
+Gui.ResetOnSpawn = false
+Gui.IgnoreGuiInset = true
+Gui.DisplayOrder = 10
+Gui.Enabled = true
+Gui.Parent = PlayerGui
+
+local Windows = {}
+local ActiveTweens = {}
+
+local function ApplyStyle(obj, radius, applyShadow)
+    local corner = Instance.new("UICorner", obj)
+    corner.CornerRadius = radius or Config.Theme.CornerRadius
+    local stroke = Instance.new("UIStroke", obj)
+    stroke.Thickness = 2
+    stroke.Color = Config.Theme.BorderColor
+    if applyShadow then
+        local shadow = Instance.new("UIStroke", obj)
+        shadow.Thickness = 3
+        shadow.Color = Color3.fromRGB(0, 0, 0)
+        shadow.Transparency = Config.Theme.ShadowTransparency
+        shadow.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+    end
+end
+
+local function CreateTween(obj, properties, duration)
+    local tween = TweenService:Create(obj, TweenInfo.new(
+        duration or Config.Animation.Duration,
+        Config.Animation.EasingStyle,
+        Config.Animation.EasingDirection
+    ), properties)
+    table.insert(ActiveTweens, tween)
+    return tween
+end
+
+local function ClearTweens()
+    for _, tween in ipairs(ActiveTweens) do
+        if tween.PlaybackState == Enum.PlaybackState.Playing then
+            tween:Cancel()
+        end
+    end
+    ActiveTweens = {}
+end
+
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Size = UDim2.new(0, Config.Sizes.ToggleButton.Width, 0, Config.Sizes.ToggleButton.Height)
+ToggleButton.Position = UDim2.new(0, 10, 0.5, -25)
+ToggleButton.BackgroundColor3 = Config.Theme.SecondaryColor
+ToggleButton.Text = "F"
+ToggleButton.TextColor3 = Config.Theme.TextColor
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.TextSize = 22
+ToggleButton.ZIndex = 1000 -- Increased ZIndex
+ToggleButton.Parent = Gui
+ApplyStyle(ToggleButton, nil, true)
+
+ToggleButton.MouseEnter:Connect(function()
+    CreateTween(ToggleButton, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration):Play()
+end)
+ToggleButton.MouseLeave:Connect(function()
+    CreateTween(ToggleButton, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+end)
+
+local toggleDragging, toggleDragStart, toggleStartPos
+ToggleButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        toggleDragging = true
+        toggleDragStart = input.Position
+        toggleStartPos = ToggleButton.Position
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if toggleDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - toggleDragStart
+        local newPos = UDim2.new(
+            toggleStartPos.X.Scale, math.clamp(toggleStartPos.X.Offset + delta.X, 0, Gui.AbsoluteSize.X - ToggleButton.AbsoluteSize.X),
+            toggleStartPos.Y.Scale, math.clamp(toggleStartPos.Y.Offset + delta.Y, 0, Gui.AbsoluteSize.Y - ToggleButton.AbsoluteSize.Y)
+        )
+        ToggleButton.Position = newPos
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        toggleDragging = false
+    end
+end)
+
+local function AnimateWindow(window, show)
+    ClearTweens()
+    print("Animating window, show:", show, "Window:", window.Name)
+    if show then
+        window.Visible = true
+        window.Position = UDim2.new(0.5, 0, 0.5, 0)
+        window.Size = UDim2.new(0, 0, 0, 0)
+        window.BackgroundTransparency = 1
+        local tween = CreateTween(window, {
+            Position = UDim2.new(0.5, -Config.Sizes.Window.Width/2, 0.5, -Config.Sizes.Window.Height/2),
+            Size = UDim2.new(0, Config.Sizes.Window.Width, 0, Config.Sizes.Window.Height),
+            BackgroundTransparency = 0
+        })
+        tween:Play()
+        tween.Completed:Once(function()
+            print("Window animation completed, visible:", window.Visible)
+        end)
+    else
+        local tween = CreateTween(window, {
+            Size = UDim2.new(0, 0, 0, 0),
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            BackgroundTransparency = 1
+        })
+        tween:Play()
+        tween.Completed:Once(function()
+            window.Visible = false
+            print("Window hidden")
+        end)
+    end
+end
+
+local MainVisible = false
+ToggleButton.MouseButton1Click:Connect(function()
+    MainVisible = not MainVisible
+    print("Toggle clicked, MainVisible:", MainVisible)
+    for _, window in ipairs(Windows) do
+        AnimateWindow(window, MainVisible)
+    end
+end)
+
+function Fluxcore:MakeWindow(config)
+    local Window = {}
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Size = UDim2.new(0, Config.Sizes.Window.Width, 0, Config.Sizes.Window.Height)
+    MainFrame.Position = UDim2.new(0.5, -Config.Sizes.Window.Width/2, 0.5, -Config.Sizes.Window.Height/2)
+    MainFrame.BackgroundColor3 = Config.Theme.PrimaryColor
+    MainFrame.Active = true
+    MainFrame.Visible = false
+    MainFrame.Name = config.Name or "Window"
+    MainFrame.ClipsDescendants = true
+    MainFrame.ZIndex = 500 -- Ensure window is above other elements
+    MainFrame.Parent = Gui
+    ApplyStyle(MainFrame, nil, true)
+
+    table.insert(Windows, MainFrame)
+
+    local TopBar = Instance.new("TextLabel", MainFrame)
+    TopBar.Size = UDim2.new(1, 0, 0, 40)
+    TopBar.Text = (config.Name or "Fluxcore Window"):gsub("%s+$", "")
+    TopBar.BackgroundColor3 = Config.Theme.SecondaryColor
+    TopBar.TextColor3 = Config.Theme.TextColor
+    TopBar.Font = Enum.Font.GothamBlack
+    TopBar.TextSize = 20
+    TopBar.TextXAlignment = Enum.TextXAlignment.Left
+    TopBar.TextYAlignment = Enum.TextYAlignment.Center
+    TopBar.Position = UDim2.new(0, 10, 0, 0)
+    TopBar.TextTruncate = Enum.TextTruncate.AtEnd
+    TopBar.ClipsDescendants = true
+    ApplyStyle(TopBar)
+
+    local windowDragging, windowDragStart, windowStartPos
+    TopBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            windowDragging = true
+            windowDragStart = input.Position
+            windowStartPos = MainFrame.Position
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if windowDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - windowDragStart
+            local newPos = UDim2.new(
+                windowStartPos.X.Scale, math.clamp(windowStartPos.X.Offset + delta.X, -Config.Sizes.Window.Width/2, Gui.AbsoluteSize.X - Config.Sizes.Window.Width/2),
+                windowStartPos.Y.Scale, math.clamp(windowStartPos.Y.Offset + delta.Y, -Config.Sizes.Window.Height/2, Gui.AbsoluteSize.Y - Config.Sizes.Window.Height/2)
+            )
+            MainFrame.Position = newPos
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            windowDragging = false
+        end
+    end)
+
+    local SideBarScroll = Instance.new("ScrollingFrame", MainFrame)
+    SideBarScroll.Size = UDim2.new(0, Config.Sizes.SidebarWidth, 1, -40)
+    SideBarScroll.Position = UDim2.new(0, 0, 0, 40)
+    SideBarScroll.BackgroundColor3 = Config.Theme.PrimaryColor
+    SideBarScroll.ScrollBarThickness = 3
+    SideBarScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    SideBarScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    SideBarScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+    SideBarScroll.ClipsDescendants = true
+    SideBarScroll.ScrollingEnabled = true
+    ApplyStyle(SideBarScroll)
+
+    local TabButtonLayout = Instance.new("UIListLayout", SideBarScroll)
+    TabButtonLayout.Padding = UDim.new(0, 6)
+    local SideBarPadding = Instance.new("UIPadding", SideBarScroll)
+    SideBarPadding.PaddingTop = UDim.new(0, 5)
+    SideBarPadding.PaddingBottom = UDim.new(0, 5)
+    SideBarPadding.PaddingLeft = UDim.new(0, 8)
+    SideBarPadding.PaddingRight = UDim.new(0, 8)
+
+    local ContentArea = Instance.new("Frame", MainFrame)
+    ContentArea.Size = UDim2.new(1, -Config.Sizes.SidebarWidth, 1, -40)
+    ContentArea.Position = UDim2.new(0, Config.Sizes.SidebarWidth, 0, 40)
+    ContentArea.BackgroundColor3 = Config.Theme.SecondaryColor
+    ContentArea.ClipsDescendants = true
+    ApplyStyle(ContentArea)
+
+    local Tabs = {}
+    local CurrentTab
+
+    function Window:MakeTab(info)
+        local Tab = {}
+        local TabButton = Instance.new("TextButton", SideBarScroll)
+        TabButton.Size = UDim2.new(0, Config.Sizes.TabButton.Width, 0, Config.Sizes.TabButton.Height)
+        TabButton.Text = (info.Name or "Tab"):gsub("%s+$", "")
+        TabButton.BackgroundColor3 = Config.Theme.SecondaryColor
+        TabButton.TextColor3 = Config.Theme.TextColor
+        TabButton.Font = Enum.Font.GothamSemibold
+        TabButton.TextSize = 14
+        TabButton.TextXAlignment = Enum.TextXAlignment.Center
+        TabButton.TextYAlignment = Enum.TextYAlignment.Center
+        TabButton.TextTruncate = Enum.TextTruncate.AtEnd
+        TabButton.ClipsDescendants = true
+        ApplyStyle(TabButton, UDim.new(0, 6))
+
+        TabButton.MouseEnter:Connect(function()
+            if CurrentTab ~= Tab.Content then
+                CreateTween(TabButton, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration):Play()
+            end
+        end)
+        TabButton.MouseLeave:Connect(function()
+            if CurrentTab ~= Tab.Content then
+                CreateTween(TabButton, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+            end
+        end)
+
+        local Content = Instance.new("ScrollingFrame", ContentArea)
+        Content.Size = UDim2.new(1, -10, 1, -10)
+        Content.Position = UDim2.new(0, 5, 0, 5)
+        Content.BackgroundColor3 = Config.Theme.SecondaryColor
+        Content.Visible = false
+        Content.ScrollBarThickness = 3
+        Content.CanvasSize = UDim2.new(0, 0, 0, 0)
+        Content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        Content.ScrollingDirection = Enum.ScrollingDirection.Y
+        Content.ClipsDescendants = true
+        Content:GetPropertyChangedSignal("CanvasSize"):Connect(function()
+            local contentHeight = Content.CanvasSize.Y.Offset
+            local frameHeight = Content.AbsoluteSize.Y
+            Content.ScrollingEnabled = contentHeight > frameHeight
+            Content.ScrollBarImageTransparency = contentHeight > frameHeight and 0 or 1
+        end)
+        ApplyStyle(Content)
+
+        local layout = Instance.new("UIListLayout", Content)
+        layout.Padding = UDim.new(0, 6)
+        local padding = Instance.new("UIPadding", Content)
+        padding.PaddingLeft = UDim.new(0, 8)
+        padding.PaddingRight = UDim.new(0, 8)
+        padding.PaddingTop = UDim.new(0, 8)
+        padding.PaddingBottom = UDim.new(0, 8)
+
+        function Tab:Show()
+            if CurrentTab == Content then
+                Content.Visible = false
+                CreateTween(TabButton, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+                CurrentTab = nil
+            else
+                if CurrentTab then
+                    CurrentTab.Visible = false
+                    CreateTween(CurrentTab, {BackgroundTransparency = 1}, Config.Animation.HoverDuration):Play()
+                end
+                for _, t in pairs(Tabs) do
+                    CreateTween(t.Button, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+                end
+                Content.Visible = true
+                CreateTween(Content, {BackgroundTransparency = 0}, Config.Animation.HoverDuration):Play()
+                CreateTween(TabButton, {BackgroundColor3 = Config.Theme.AccentColor}, Config.Animation.HoverDuration):Play()
+                CurrentTab = Content
+            end
+        end
+
+        TabButton.MouseButton1Click:Connect(Tab.Show)
+        Tab.Content = Content
+
+        function Tab:AddButton(opts)
+            local btn = Instance.new("TextButton", Content)
+            btn.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
+            btn.Text = (opts.Name or "Button"):gsub("%s+$", "")
+            btn.BackgroundColor3 = Config.Theme.SecondaryColor
+            btn.TextColor3 = Config.Theme.TextColor
+            btn.Font = Enum.Font.GothamSemibold
+            btn.TextSize = 15
+            btn.TextXAlignment = Enum.TextXAlignment.Left
+            btn.TextTruncate = Enum.TextTruncate.AtEnd
+            btn.ClipsDescendants = true
+            local btnPadding = Instance.new("UIPadding", btn)
+            btnPadding.PaddingLeft = UDim.new(0, 8)
+            ApplyStyle(btn, UDim.new(0, 6))
+
+            local underline = Instance.new("Frame", btn)
+            underline.Size = UDim2.new(1, -16, 0, 2)
+            underline.Position = UDim2.new(0, 8, 1, -4)
+            underline.BackgroundColor3 = Config.Theme.AccentColor
+            underline.Visible = false
+            local ulCorner = Instance.new("UICorner", underline)
+            ulCorner.CornerRadius = UDim.new(0, 2)
+
+            btn.MouseButton1Click:Connect(function()
+                local clickTween = CreateTween(btn, {BackgroundColor3 = Config.Theme.ClickColor, Size = UDim2.new(1, -2, 0, Config.Sizes.ElementHeight - 2)}, Config.Animation.ClickDuration)
+                clickTween:Play()
+                clickTween.Completed:Once(function()
+                    CreateTween(btn, {BackgroundColor3 = Config.Theme.SecondaryColor, Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)}, Config.Animation.ClickDuration):Play()
+                end)
+                if opts.Callback then opts.Callback() end
+            end)
+            btn.MouseEnter:Connect(function()
+                CreateTween(btn, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration):Play()
+                underline.Visible = true
+            end)
+            btn.MouseLeave:Connect(function()
+                CreateTween(btn, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+                underline.Visible = false
+            end)
+        end
+
+        function Tab:AddLabel(txt)
+            local lbl = Instance.new("TextLabel", Content)
+            lbl.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
+            lbl.Text = (txt or "Label"):gsub("%s+$", "")
+            lbl.BackgroundTransparency = 1
+            lbl.TextColor3 = Config.Theme.TextColor
+            lbl.Font = Enum.Font.GothamSemibold
+            lbl.TextSize = 15
+            lbl.TextXAlignment = Enum.TextXAlignment.Left
+            lbl.TextTruncate = Enum.TextTruncate.AtEnd
+            lbl.ClipsDescendants = true
+            local lblPadding = Instance.new("UIPadding", lbl)
+            lblPadding.PaddingLeft = UDim.new(0, 8)
+        end
+
+        function Tab:AddTextbox(opts)
+            local box = Instance.new("TextBox", Content)
+            box.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
+            box.Text = (opts.Default or ""):gsub("%s+$", "")
+            box.ClearTextOnFocus = opts.TextDisappear or false
+            box.TextColor3 = Config.Theme.TextColor
+            box.Font = Enum.Font.GothamSemibold
+            box.TextSize = 15
+            box.TextXAlignment = Enum.TextXAlignment.Left
+            box.TextTruncate = Enum.TextTruncate.AtEnd
+            box.BackgroundColor3 = Config.Theme.PrimaryColor
+            box.ClipsDescendants = true
+            local boxPadding = Instance.new("UIPadding", box)
+            boxPadding.PaddingLeft = UDim.new(0, 8)
+            ApplyStyle(box, UDim.new(0, 6))
+            box.FocusLost:Connect(function()
+                if opts.Callback then opts.Callback(box.Text) end
+            end)
+            box.MouseEnter:Connect(function()
+                CreateTween(box, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration):Play()
+            end)
+            box.MouseLeave:Connect(function()
+                CreateTween(box, {BackgroundColor3 = Config.Theme.PrimaryColor}, Config.Animation.HoverDuration):Play()
+            end)
+        end
+
+        function Tab:AddDropdown(opts)
+            local dropdownFrame = Instance.new("Frame", Content)
+            dropdownFrame.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
+            dropdownFrame.BackgroundColor3 = Config.Theme.SecondaryColor
+            dropdownFrame.ClipsDescendants = true
+            ApplyStyle(dropdownFrame, UDim.new(0, 6))
+
+            local dropdownButton = Instance.new("TextButton", dropdownFrame)
+            dropdownButton.Size = UDim2.new(1, 0, 1, 0)
+            dropdownButton.BackgroundTransparency = 1
+            dropdownButton.Text = (opts.Default or opts.Name or "Select Option"):gsub("%s+$", "") -- Set default text
+            dropdownButton.TextColor3 = Config.Theme.TextColor
+            dropdownButton.Font = Enum.Font.GothamSemibold
+            dropdownButton.TextSize = 15
+            dropdownButton.TextXAlignment = Enum.TextXAlignment.Left
+            dropdownButton.TextTruncate = Enum.TextTruncate.AtEnd
+            dropdownButton.ClipsDescendants = true
+            local btnPadding = Instance.new("UIPadding", dropdownButton)
+            btnPadding.PaddingLeft = UDim.new(0, 8)
+
+            local dropdownList = Instance.new("Frame", Content)
+            dropdownList.Size = UDim2.new(1, 0, 0, 0)
+            dropdownList.BackgroundColor3 = Config.Theme.SecondaryColor
+            dropdownList.ClipsDescendants = true
+            dropdownList.Visible = false
+            ApplyStyle(dropdownList, UDim.new(0, 6))
+
+            local listLayout = Instance.new("UIListLayout", dropdownList)
+            listLayout.Padding = UDim.new(0, 2)
+
+            local expanded = false
+            local function toggleDropdown()
+                expanded = not expanded
+                dropdownList.Visible = expanded
+                dropdownList.Size = expanded and UDim2.new(1, 0, 0, #opts.Options * Config.Sizes.ElementHeight) or UDim2.new(1, 0, 0, 0)
+                CreateTween(dropdownList, {BackgroundTransparency = expanded and 0 or 1}, Config.Animation.HoverDuration):Play()
+            end
+
+            dropdownButton.MouseButton1Click:Connect(toggleDropdown)
+            dropdownButton.MouseEnter:Connect(function()
+                CreateTween(dropdownFrame, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration):Play()
+            end)
+            dropdownButton.MouseLeave:Connect(function()
+                CreateTween(dropdownFrame, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+            end)
+
+            for _, option in ipairs(opts.Options or {}) do
+                local optionButton = Instance.new("TextButton", dropdownList)
+                optionButton.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
+                optionButton.BackgroundColor3 = Config.Theme.SecondaryColor
+                optionButton.Text = tostring(option):gsub("%s+$", "")
+                optionButton.TextColor3 = Config.Theme.TextColor
+                optionButton.Font = Enum.Font.Gotham
+                optionButton.TextSize = 14
+                optionButton.TextXAlignment = Enum.TextXAlignment.Left
+                optionButton.TextTruncate = Enum.TextTruncate.AtEnd
+                optionButton.ClipsDescendants = true
+                local optPadding = Instance.new("UIPadding", optionButton)
+                optPadding.PaddingLeft = UDim.new(0, 8)
+                ApplyStyle(optionButton, UDim.new(0, 6))
+                optionButton.MouseButton1Click:Connect(function()
+                    dropdownButton.Text = tostring(option):gsub("%s+$", "")
+                    toggleDropdown()
+                    if opts.Callback then opts.Callback(option) end
+                end)
+                optionButton.MouseEnter:Connect(function()
+                    CreateTween(optionButton, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration):Play()
+                end)
+                optionButton.MouseLeave:Connect(function()
+                    CreateTween(optionButton, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+                end)
+            end
+        end
+
+        function Tab:AddSlider(opts)
+            local sliderFrame = Instance.new("Frame", Content)
+            sliderFrame.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight + 10)
+            sliderFrame.BackgroundColor3 = Config.Theme.SecondaryColor
+            sliderFrame.ClipsDescendants = true
+            ApplyStyle(sliderFrame, UDim.new(0, 6))
+
+            local titleLabel = Instance.new("TextLabel", sliderFrame)
+            titleLabel.Size = UDim2.new(0, 100, 1, 0)
+            titleLabel.Position = UDim2.new(0, 8, 0, 0)
+            titleLabel.Text = (opts.Name or "Slider"):gsub("%s+$", "")
+            titleLabel.BackgroundTransparency = 1
+            titleLabel.TextColor3 = Config.Theme.TextColor
+            titleLabel.Font = Enum.Font.GothamSemibold
+            titleLabel.TextSize = 15
+            titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+            titleLabel.TextTruncate = Enum.TextTruncate.AtEnd
+            titleLabel.ClipsDescendants = true
+            local titlePadding = Instance.new("UIPadding", titleLabel)
+            titlePadding.PaddingLeft = UDim.new(0, 8)
+
+            local sliderBar = Instance.new("Frame", sliderFrame)
+            sliderBar.Size = UDim2.new(1, -150, 0, 6)
+            sliderBar.Position = UDim2.new(0, 110, 0.5, -3)
+            sliderBar.BackgroundColor3 = Config.Theme.PrimaryColor
+            sliderBar.ClipsDescendants = true
+            ApplyStyle(sliderBar, UDim.new(0, 3))
+
+            local fill = Instance.new("Frame", sliderBar)
+            fill.Size = UDim2.new(0, 0, 1, 0)
+            fill.BackgroundColor3 = Config.Theme.AccentColor
+            ApplyStyle(fill, UDim.new(0, 3))
+
+            local valueLabel = Instance.new("TextLabel", sliderFrame)
+            valueLabel.Size = UDim2.new(0, 40, 1, 0)
+            valueLabel.Position = UDim2.new(1, -48, 0, 0)
+            valueLabel.BackgroundTransparency = 1
+            valueLabel.TextColor3 = Config.Theme.TextColor
+            valueLabel.Font = Enum.Font.Gotham
+            valueLabel.TextSize = 14
+            valueLabel.Text = string.format("%.2f", opts.Default or opts.Min or 0)
+            valueLabel.TextTruncate = Enum.TextTruncate.AtEnd
+
+            -- Initialize slider fill based on default value
+            local value = opts.Default or opts.Min or 0
+            local relative = (value - opts.Min) / (opts.Max - opts.Min)
+            fill.Size = UDim2.new(math.clamp(relative, 0, 1), 0, 1, 0)
+
+            local dragging = false
+            local function updateValue(inputX)
+                local relative = math.clamp((inputX - sliderBar.AbsolutePosition.X) / sliderBar.AbsoluteSize.X, 0, 1)
+                value = math.floor((opts.Min + (opts.Max - opts.Min) * relative) * 100) / 100
+                fill.Size = UDim2.new(relative, 0, 1, 0)
+                valueLabel.Text = string.format("%.2f", value)
+                if opts.Callback then opts.Callback(value) end
+            end
+
+            sliderBar.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    dragging = true
+                    updateValue(input.Position.X)
+                end
+            end)
+
+            UserInputService.InputChanged:Connect(function(input)
+                if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                    updateValue(input.Position.X)
+                end
+            end)
+
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    dragging = false
+                end
+            end)
+        end
+
+        function Tab:AddToggle(opts)
+            local toggleFrame = Instance.new("Frame", Content)
+            toggleFrame.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
+            toggleFrame.BackgroundColor3 = Config.Theme.SecondaryColor
+            toggleFrame.ClipsDescendants = true
+            ApplyStyle(toggleFrame, UDim.new(0, 6))
+
+            local toggleButton = Instance.new("TextButton", toggleFrame)
+            toggleButton.Size = UDim2.new(1, 0, 1, 0)
+            toggleButton.BackgroundTransparency = 1
+            toggleButton.Text = (opts.Name or "Toggle"):gsub("%s+$", "")
+            toggleButton.TextColor3 = Config.Theme.TextColor
+            toggleButton.Font = Enum.Font.GothamSemibold
+            toggleButton.TextSize = 15
+            toggleButton.TextXAlignment = Enum.TextXAlignment.Left
+            toggleButton.TextTruncate = Enum.TextTruncate.AtEnd
+            toggleButton.ClipsDescendants = true
+            local btnPadding = Instance.new("UIPadding", toggleButton)
+            btnPadding.PaddingLeft = UDim.new(0, 8)
+
+            local toggleIndicator = Instance.new("Frame", toggleFrame)
+            toggleIndicator.Size = UDim2.new(0, Config.Sizes.ToggleIndicator.Width, 0, Config.Sizes.ToggleIndicator.Height)
+            toggleIndicator.Position = UDim2.new(1, -Config.Sizes.ToggleIndicator.Width - 6, 0.5, -Config.Sizes.ToggleIndicator.Height/2)
+            toggleIndicator.BackgroundColor3 = Config.Theme.SecondaryColor
+            ApplyStyle(toggleIndicator, UDim.new(0, Config.Sizes.ToggleIndicator.Height/2))
+
+            local toggleInner = Instance.new("Frame", toggleIndicator)
+            toggleInner.Size = UDim2.new(0.5, -2, 1, -2)
+            toggleInner.Position = UDim2.new(0, 1, 0, 1)
+            toggleInner.BackgroundColor3 = Config.Theme.TextColor
+            ApplyStyle(toggleInner, UDim.new(0, (Config.Sizes.ToggleIndicator.Height-2)/2))
+
+            local state = opts.Default or false
+            local function updateVisual()
+                CreateTween(toggleIndicator, {BackgroundColor3 = state and Config.Theme.AccentColor or Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+                CreateTween(toggleInner, {Position = state and UDim2.new(0.5, 1, 0, 1) or UDim2.new(0, 1, 0, 1)}, Config.Animation.HoverDuration):Play()
+            end
+
+            toggleButton.MouseButton1Click:Connect(function()
+                state = not state
+                updateVisual()
+                if opts.Callback then opts.Callback(state) end
+            end)
+            toggleButton.MouseEnter:Connect(function()
+                CreateTween(toggleFrame, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration):Play()
+            end)
+            toggleButton.MouseLeave:Connect(function()
+                CreateTween(toggleFrame, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+            end)
+
+            updateVisual()
+        end
+
+        function Tab:AddDisplayText(opts)
+            local displayFrame = Instance.new("Frame", Content)
+            displayFrame.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
+            displayFrame.BackgroundColor3 = Config.Theme.SecondaryColor
+            displayFrame.ClipsDescendants = true
+            ApplyStyle(displayFrame, UDim.new(0, 6))
+
+            local displayLabel = Instance.new("TextLabel", displayFrame)
+            displayLabel.Size = UDim2.new(1, 0, 1, 0)
+            displayLabel.BackgroundTransparency = 1
+            displayLabel.Text = (opts.Text or ""):gsub("%s+$", "")
+            displayLabel.TextColor3 = Config.Theme.TextColor
+            displayLabel.Font = Enum.Font.GothamSemibold
+            displayLabel.TextSize = 15
+            displayLabel.TextXAlignment = Enum.TextXAlignment.Left
+            displayLabel.TextTruncate = Enum.TextTruncate.AtEnd
+            displayLabel.ClipsDescendants = true
+            local lblPadding = Instance.new("UIPadding", displayLabel)
+            lblPadding.PaddingLeft = UDim.new(0, 8)
+
+            displayFrame.MouseEnter:Connect(function()
+                CreateTween(displayFrame, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration):Play()
+            end)
+            displayFrame.MouseLeave:Connect(function()
+                CreateTween(displayFrame, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+            end)
+
+            return displayLabel
+        end
+
+        Tab.Button = TabButton
+        table.insert(Tabs, Tab)
+        return Tab
+    end
+
+    return Window
+end
+
+function Fluxcore:MakeNotification(data)
+    local msg = Instance.new("TextLabel", Gui)
+    msg.Size = UDim2.new(0, 250, 0, 50)
+    msg.Position = UDim2.new(1, 0, 1, -60 - (#Windows * 60))
+    msg.Text = (data.Content or "Notification"):gsub("%s+$", "")
+    msg.BackgroundColor3 = data.Type == "error" and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(50, 150, 50)
+    msg.TextColor3 = Config.Theme.TextColor
+    msg.Font = Enum.Font.GothamSemibold
+    msg.TextSize = 14
+    msg.TextWrapped = true
+    msg.TextXAlignment = Enum.TextXAlignment.Left
+    msg.TextTruncate = Enum.TextTruncate.AtEnd
+    msg.ClipsDescendants = true
+    msg.ZIndex = 1000
+    local msgPadding = Instance.new("UIPadding", msg)
+    msgPadding.PaddingLeft = UDim.new(0, 8)
+    ApplyStyle(msg, nil, true)
+
+    local tween = CreateTween(msg, {Position = UDim2.new(1, -260, 1, -60 - (#Windows * 60))}, 0.4)
+    tween:Play()
+    game:GetService("Debris"):AddItem(msg, data.Time or 3)
+end
+
+function Fluxcore:ShowSplashScreen()
+    print("Showing splash screen")
+    local splash = Instance.new("Frame", Gui)
+    splash.Size = UDim2.new(0, 300, 0, 150)
+    splash.Position = UDim2.new(0.5, -150, 0.5, -75)
+    splash.BackgroundColor3 = Config.Theme.PrimaryColor
+    splash.ZIndex = 1000
+    splash.ClipsDescendants = true
+    ApplyStyle(splash, nil, true)
+
+    local title = Instance.new("TextLabel", splash)
+    title.Size = UDim2.new(1, 0, 0.6, 0)
+    title.Position = UDim2.new(0, 0, 0, 0)
+    title.BackgroundTransparency = 1
+    title.Text = "FluxCore.Hub"
+    title.TextColor3 = Config.Theme.TextColor
+    title.Font = Enum.Font.GothamBlack
+    title.TextSize = 28
+    title.TextXAlignment = Enum.TextXAlignment.Center
+    title.TextYAlignment = Enum.TextYAlignment.Center
+
+    local credit = Instance.new("TextLabel", splash)
+    credit.Size = UDim2.new(1, 0, 0.4, 0)
+    credit.Position = UDim2.new(0, 0, 0.6, 0)
+    credit.BackgroundTransparency = 1
+    credit.Text = "Made by Alkaizar Hssm"
+    credit.TextColor3 = Config.Theme.TextColor
+    credit.Font = Enum.Font.GothamSemibold
+    credit.TextSize = 18
+    credit.TextXAlignment = Enum.TextXAlignment.Center
+    credit.TextYAlignment = Enum.TextYAlignment.Center
+
+    splash.BackgroundTransparency = 1
+    title.TextTransparency = 1
+    credit.TextTransparency = 1
+    splash.Size = UDim2.new(0, 0, 0, 0)
+    local fadeIn = CreateTween(splash, {
+        BackgroundTransparency = 0,
+        Size = UDim2.new(0, 300, 0, 150)
+    }, 0.5)
+    local titleFadeIn = CreateTween(title, {TextTransparency = 0}, 0.5)
+    local creditFadeIn = CreateTween(credit, {TextTransparency = 0}, 0.5)
+    fadeIn:Play()
+    titleFadeIn:Play()
+    creditFadeIn:Play()
+
+    task.delay(3, function()
+        local fadeOut = CreateTween(splash, {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(0, 0, 0, 0)
+        }, 0.5)
+        local titleFadeOut = CreateTween(title, {TextTransparency = 1}, 0.5)
+        local creditFadeOut = CreateTween(credit, {TextTransparency = 1}, 0.5)
+        fadeOut:Play()
+        titleFadeOut:Play()
+        creditFadeOut:Play()
+        fadeOut.Completed:Once(function()
+            splash:Destroy()
+            print("Splash screen destroyed")
+        end)
+    end)
+end
+
+function Fluxcore:Init()
+    print("Fluxcore.Hub Initialized")
+    Fluxcore:ShowSplashScreen()
+    RunService:BindToRenderStep("FluxcoreUpdate", Enum.RenderPriority.Input.Value, function()
+        if Gui and not Gui.Enabled then
+            Gui.Enabled = true
+            print("Re-enabled GUI")
+        end
+    end)
+end
+
+function Fluxcore:Destroy()
+    RunService:UnbindFromRenderStep("FluxcoreUpdate")
+    ClearTweens()
+    if Gui then Gui:Destroy() end
+    print("Fluxcore destroyed")
+end
+
+-- Replace DemonLib with Fluxcore if loadstring failed
+DemonLib = Fluxcore
+
+-- Create GUI
+local Window = DemonLib:MakeWindow({Name = "Demon GUI", HidePremium = false})
+local MainTab = Window:MakeTab({Name = "Main"})
+local AimbotTab = Window:MakeTab({Name = "Aimbots"})
+
+-- Highlight Players Toggle (Main Tab)
+local highlightEnabled = false
+local highlightConnections = {}
+
+local function highlightPlayer(player)
+    if player == LocalPlayer then return end
+    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
+
+    local oldHighlight = player.Character:FindFirstChild("PlayerHighlight")
+    if oldHighlight then
+        oldHighlight:Destroy()
+    end
+
+    if highlightEnabled then
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "PlayerHighlight"
+        highlight.Adornee = player.Character
+        highlight.FillColor = Color3.fromRGB(0, 255, 255)
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        highlight.FillTransparency = 0.5
+        highlight.OutlineTransparency = 0
+        highlight.Parent = player.Character
+    end
+end
+
+local function clearHighlights()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Character then
+            local hl = player.Character:FindFirstChild("PlayerHighlight")
+            if hl then hl:Destroy() end
+        end
+    end
+end
+
+MainTab:AddToggle({
+    Name = "Highlight Players",
+    Default = false,
+    Callback = function(state)
+        highlightEnabled = state
+        print("Highlight Players toggled:", state)
+
+        for _, conn in pairs(highlightConnections) do
+            if conn.Connected then conn:Disconnect() end
+        end
+        highlightConnections = {}
+
+        if highlightEnabled then
+            for _, player in pairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer then
+                    table.insert(highlightConnections, player.CharacterAdded:Connect(function()
+                        task.wait(1)
+                        highlightPlayer(player)
+                    end))
+                    if player.Character then
+                        highlightPlayer(player)
+                    end
+                end
+            end
+
+            table.insert(highlightConnections, Players.PlayerAdded:Connect(function(player)
+                table.insert(highlightConnections, player.CharacterAdded:Connect(function()
+                    task.wait(1)
+                    highlightPlayer(player)
+                end))
+            end))
+        else
+            clearHighlights()
+        end
+    end
+})
+
+-- Speed Slider (Main Tab)
+MainTab:AddSlider({
+    Name = "Speed",
+    Min = 16,
+    Max = 100,
+    Default = 16,
+    Callback = function(val)
+        local player = Players.LocalPlayer
+        local character = player.Character or player.CharacterAdded:Wait()
+        local humanoid = character:WaitForChild("Humanoid")
+        humanoid.WalkSpeed = val
+        print("Speed set to:", val)
+    end
+})
+
+-- Infinity Yield Button (Main Tab)
+MainTab:AddButton({
+    Name = "Infinity Yield",
+    Callback = function()
+        print("Loading Infinity Yield")
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+    end
+})
+
+-- Aimbot (Aimbots Tab)
+local fov = 136
+local targetMode = "NPC"
+local teamCheckEnabled = true
+local aimTargetPart = "Head"
+local highlightTeammates = true
+local wallCheckEnabled = true
+local aimStrength = 0.4
+
+local FOVring = Drawing.new("Circle")
+FOVring.Visible = false
+FOVring.Thickness = 2
+FOVring.Color = Color3.fromRGB(255, 255, 255)
+FOVring.Filled = false
+FOVring.Radius = fov
+FOVring.Position = Cam.ViewportSize / 2
+
+local isAiming = false
+local validTargets = {}
+local raycastParams = RaycastParams.new()
+raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+
+local function isValidTarget(obj)
+    if targetMode == "NPC" then
+        return obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0
+            and obj:FindFirstChild("Head") and (obj:FindFirstChild("Torso") or obj:FindFirstChild("UpperTorso") or obj:FindFirstChild("HumanoidRootPart"))
+            and not Players:GetPlayerFromCharacter(obj)
+    elseif targetMode == "Player" then
+        local player = Players:GetPlayerFromCharacter(obj)
+        if player and player ~= LocalPlayer and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0
+            and obj:FindFirstChild("Head") and (obj:FindFirstChild("Torso") or obj:FindFirstChild("UpperTorso") or obj:FindFirstChild("HumanoidRootPart")) then
+            if teamCheckEnabled then
+                if highlightTeammates then
+                    return true
+                else
+                    return player.Team ~= LocalPlayer.Team
+                end
+            end
+            return true
+        end
+    end
+    return false
+end
+
+local function highlightTarget(target)
+    local old = target:FindFirstChild("TargetHighlight")
+    if old then old:Destroy() end
+
+    local h = Instance.new("Highlight")
+    h.Name = "TargetHighlight"
+    h.Adornee = target
+    if targetMode == "Player" and teamCheckEnabled then
+        local player = Players:GetPlayerFromCharacter(target)
+        if player then
+            if player.Team == LocalPlayer.Team and highlightTeammates then
+                h.FillColor = Color3.fromRGB(0, 255, 0)
+            elseif player.Team ~= LocalPlayer.Team then
+                h.FillColor = Color3.fromRGB(255, 0, 0)
+            else
+                h.FillColor = Color3.fromRGB(0, 255, 255)
+            end
+        else
+            h.FillColor = Color3.fromRGB(0, 255, 255)
+        end
+    else
+        h.FillColor = Color3.fromRGB(0, 255, 255)
+    end
+    h.OutlineColor = Color3.fromRGB(255, 255, 255)
+    h.FillTransparency = 0.2
+    h.OutlineTransparency = 0
+    h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    h.Parent = target
+end
+
+local function unhighlightTarget(target)
+    local h = target:FindFirstChild("TargetHighlight")
+    if h then h:Destroy() end
+end
+
+local function updateTargets()
+    local tempTable = {}
+    if targetMode == "NPC" then
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if isValidTarget(obj) then
+                tempTable[obj] = true
+            end
+        end
+    elseif targetMode == "Player" then
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character and isValidTarget(player.Character) then
+                tempTable[player.Character] = true
+            end
+        end
+    end
+
+    for i = #validTargets, 1, -1 do
+        local target = validTargets[i]
+        if not tempTable[target] then
+            table.remove(validTargets, i)
+            unhighlightTarget(target)
+        end
+    end
+
+    for target in pairs(tempTable) do
+        if not table.find(validTargets, target) then
+            table.insert(validTargets, target)
+            if isAiming then highlightTarget(target) end
+        end
+    end
+end
+
+local function handleDescendant(descendant)
+    if isValidTarget(descendant) then
+        table.insert(validTargets, descendant)
+        if isAiming then highlightTarget(descendant) end
+        descendant:WaitForChild("Humanoid").Destroying:Connect(function()
+            for i = #validTargets, 1, -1 do
+                if validTargets[i] == descendant then
+                    table.remove(validTargets, i)
+                    unhighlightTarget(descendant)
+                    break
+                end
+            end
+        end)
+    end
+end
+
+workspace.DescendantAdded:Connect(handleDescendant)
+
+local function updateDrawings()
+    FOVring.Position = Cam.ViewportSize / 2
+    FOVring.Radius = fov * (Cam.ViewportSize.Y / 1080)
+end
+
+local function getTarget()
+    local nearest, minDistance = nil, math.huge
+    local viewportCenter = Cam.ViewportSize / 2
+    raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
+
+    for _, target in ipairs(validTargets) do
+        local targetPart = target:FindFirstChild(aimTargetPart)
+        if not targetPart and aimTargetPart == "Torso" then
+            targetPart = target:FindFirstChild("UpperTorso") or target:FindFirstChild("HumanoidRootPart")
+        end
+        if targetPart then
+            local screenPos, visible = Cam:WorldToViewportPoint(targetPart.Position)
+            if visible and screenPos.Z > 0 then
+                local isValid = true
+                if wallCheckEnabled then
+                    local ray = workspace:Raycast(Cam.CFrame.Position, (targetPart.Position - Cam.CFrame.Position).Unit * 1000, raycastParams)
+                    isValid = ray and ray.Instance:IsDescendantOf(target)
+                end
+                if isValid then
+                    local player = Players:GetPlayerFromCharacter(target)
+                    if targetMode == "Player" and teamCheckEnabled and player and player.Team == LocalPlayer.Team then
+                        continue
+                    end
+                    local distance = (Vector2.new(screenPos.X, screenPos.Y) - viewportCenter).Magnitude
+                    if distance < minDistance and distance < fov then
+                        minDistance = distance
+                        nearest = target
+                    end
+                end
+            end
+        end
+    end
+    return nearest
+end
+
+local function aim(position)
+    local currentCF = Cam.CFrame
+    local direction = (position - currentCF.Position).Unit
+    local newLookVector = currentCF.LookVector:Lerp(direction, aimStrength)
+    Cam.CFrame = CFrame.new(currentCF.Position, currentCF.Position + newLookVector)
+end
+
+local lastUpdate = 0
+local UPDATE_INTERVAL = 0.4
+RunService.Heartbeat:Connect(function(dt)
+    updateDrawings()
+    lastUpdate += dt
+    if lastUpdate >= UPDATE_INTERVAL then
+        updateTargets()
+        lastUpdate = 0
+    end
+    if isAiming then
+        local target = getTarget()
+        if target and target:FindFirstChild(aimTargetPart) then
+            aim(target[aimTargetPart].Position)
+        end
+    end
+end)
+
+-- Aimbot Controls (Aimbots Tab)
+AimbotTab:AddDropdown({
+    Name = "Target Mode",
+    Options = {"NPC", "Player"},
+    Default = "NPC",
+    Callback = function(value)
+        targetMode = value
+        print("Target Mode set to:", value)
+        updateTargets()
+        if isAiming then
+            for _, target in ipairs(validTargets) do
+                highlightTarget(target)
+            end
+        else
+            for _, target in ipairs(validTargets) do
+                unhighlightTarget(target)
+            end
+        end
+    end
+})
+
+AimbotTab:AddToggle({
+    Name = "Aimbot",
+    Default = false,
+    Callback = function(state)
+        isAiming = state
+        FOVring.Visible = state
+        print("Aimbot toggled:", state)
+        for _, target in ipairs(validTargets) do
+            if state then
+                highlightTarget(target)
+            else
+                unhighlightTarget(target)
+            end
+        end
+    end
+})
+
+AimbotTab:AddSlider({
+    Name = "FOV Size",
+    Min = 50,
+    Max = 300,
+    Default = 136,
+    Callback = function(val)
+        fov = val
+        FOVring.Radius = fov * (Cam.ViewportSize.Y / 1080)
+        print("FOV Size set to:", val)
+    end
+})
+
+AimbotTab:AddDropdown({
+    Name = "FOV Color",
+    Options = {"White", "Blue", "Green", "Red"},
+    Default = "White",
+    Callback = function(value)
+        if value == "White" then
+            FOVring.Color = Color3.fromRGB(255, 255, 255)
+        elseif value == "Blue" then
+            FOVring.Color = Color3.fromRGB(0, 0, 255)
+        elseif value == "Green" then
+            FOVring.Color = Color3.fromRGB(0, 255, 0)
+        elseif value == "Red" then
+            FOVring.Color = Color3.fromRGB(255, 0, 0)
+        end
+        print("FOV Color set to:", value)
+    end
+})
+
+AimbotTab:AddToggle({
+    Name = "Team Check",
+    Default = true,
+    Callback = function(state)
+        teamCheckEnabled = state
+        print("Team Check toggled:", state)
+        updateTargets()
+        if isAiming then
+            for _, target in ipairs(validTargets) do
+                highlightTarget(target)
+            end
+        else
+            for _, target in ipairs(validTargets) do
+                unhighlightTarget(target)
+            end
+        end
+    end
+})
+
+AimbotTab:AddToggle({
+    Name = "Highlight Teammates",
+    Default = true,
+    Callback = function(state)
+        highlightTeammates = state
+        print("Highlight Teammates toggled:", state)
+        updateTargets()
+        if isAiming then
+            for _, target in ipairs(validTargets) do
+                highlightTarget(target)
+            end
+        else
+            for _, target in ipairs(validTargets) do
+                unhighlightTarget(target)
+            end
+        end
+    end
+})
+
+AimbotTab:AddToggle({
+    Name = "Wall Check",
+    Default = true,
+    Callback = function(state)
+        wallCheckEnabled = state
+        print("Wall Check toggled:", state)
+    end
+})
+
+AimbotTab:AddSlider({
+    Name = "Aimbot Strength",
+    Min = 0.1,
+    Max = 1,
+    Default = 0.4,
+    Callback = function(val)
+        aimStrength = val
+        print("Aimbot Strength set to:", val)
+    end
+})
+
+AimbotTab:AddDropdown({
+    Name = "Aim Target",
+    Options = {"Head", "Torso"},
+    Default = "Head",
+    Callback = function(value)
+        aimTargetPart = value
+        print("Aim Target set to:", value)
+    end
+})
+
+-- Cleanup
+workspace.DescendantRemoved:Connect(function(descendant)
+    if isValidTarget(descendant) then
+        for i = #validTargets, 1, -1 do
+            if validTargets[i] == descendant then
+                table.remove(validTargets, i)
+                unhighlightTarget(descendant)
+                break
+            end
+        end
+    end
+end)
+
+Players.PlayerRemoving:Connect(function()
+    FOVring:Remove()
+end)
+
+-- Notification and Initialization
+DemonLib:MakeNotification({
+    Content = "GUI Loaded!",
+    Time = 3
+})
+
+print("Initializing DemonLib")
+DemonLib:Init()
+updateTargets()-- Load the Fluxcore library
+local success, DemonLib = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/OtakuDreamer98/Hub/refs/heads/main/FluxCoreHub"))()
+end)
+
+if not success then
+    warn("Failed to load Fluxcore library: ", DemonLib)
+    return
+end
+
+-- Initialize Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local Cam = workspace.CurrentCamera
+
+-- Wait for PlayerGui
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui", 10)
+if not PlayerGui then
+    warn("PlayerGui not found!")
+    return
+end
+
+-- Fluxcore Library (embedded for reliability)
+local Fluxcore = {}
+local TweenService = game:GetService("TweenService")
+local Config = {
+    Theme = {
+        PrimaryColor = Color3.fromRGB(20, 20, 20),
+        SecondaryColor = Color3.fromRGB(30, 30, 30),
+        AccentColor = Color3.fromRGB(0, 120, 255),
+        HoverColor = Color3.fromRGB(50, 50, 50),
+        ClickColor = Color3.fromRGB(80, 80, 80),
+        TextColor = Color3.fromRGB(220, 220, 220),
+        BorderColor = Color3.fromRGB(50, 50, 50),
+        CornerRadius = UDim.new(0, 8),
+        ShadowTransparency = 0.4
+    },
+    Animation = {
+        Duration = 0.25,
+        HoverDuration = 0.15,
+        ClickDuration = 0.1,
+        EasingStyle = Enum.EasingStyle.Sine,
+        EasingDirection = Enum.EasingDirection.InOut
+    },
+    Sizes = {
+        Window = {Width = 600, Height = 400},
+        ToggleButton = {Width = 50, Height = 50},
+        TabButton = {Height = 35, Width = 104},
+        ElementHeight = 32,
+        SidebarWidth = 120,
+        ToggleIndicator = {Width = 36, Height = 16}
+    }
+}
+
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "Fluxcore.Hub"
+Gui.ResetOnSpawn = false
+Gui.IgnoreGuiInset = true
+Gui.DisplayOrder = 10
+Gui.Enabled = true
+Gui.Parent = PlayerGui
+
+local Windows = {}
+local ActiveTweens = {}
+
+local function ApplyStyle(obj, radius, applyShadow)
+    local corner = Instance.new("UICorner", obj)
+    corner.CornerRadius = radius or Config.Theme.CornerRadius
+    local stroke = Instance.new("UIStroke", obj)
+    stroke.Thickness = 2
+    stroke.Color = Config.Theme.BorderColor
+    if applyShadow then
+        local shadow = Instance.new("UIStroke", obj)
+        shadow.Thickness = 3
+        shadow.Color = Color3.fromRGB(0, 0, 0)
+        shadow.Transparency = Config.Theme.ShadowTransparency
+        shadow.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+    end
+end
+
+local function CreateTween(obj, properties, duration)
+    local tween = TweenService:Create(obj, TweenInfo.new(
+        duration or Config.Animation.Duration,
+        Config.Animation.EasingStyle,
+        Config.Animation.EasingDirection
+    ), properties)
+    table.insert(ActiveTweens, tween)
+    return tween
+end
+
+local function ClearTweens()
+    for _, tween in ipairs(ActiveTweens) do
+        if tween.PlaybackState == Enum.PlaybackState.Playing then
+            tween:Cancel()
+        end
+    end
+    ActiveTweens = {}
+end
+
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Size = UDim2.new(0, Config.Sizes.ToggleButton.Width, 0, Config.Sizes.ToggleButton.Height)
+ToggleButton.Position = UDim2.new(0, 10, 0.5, -25)
+ToggleButton.BackgroundColor3 = Config.Theme.SecondaryColor
+ToggleButton.Text = "F"
+ToggleButton.TextColor3 = Config.Theme.TextColor
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.TextSize = 22
+ToggleButton.ZIndex = 1000 -- Increased ZIndex
+ToggleButton.Parent = Gui
+ApplyStyle(ToggleButton, nil, true)
+
+ToggleButton.MouseEnter:Connect(function()
+    CreateTween(ToggleButton, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration):Play()
+end)
+ToggleButton.MouseLeave:Connect(function()
+    CreateTween(ToggleButton, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+end)
+
+local toggleDragging, toggleDragStart, toggleStartPos
+ToggleButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        toggleDragging = true
+        toggleDragStart = input.Position
+        toggleStartPos = ToggleButton.Position
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if toggleDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - toggleDragStart
+        local newPos = UDim2.new(
+            toggleStartPos.X.Scale, math.clamp(toggleStartPos.X.Offset + delta.X, 0, Gui.AbsoluteSize.X - ToggleButton.AbsoluteSize.X),
+            toggleStartPos.Y.Scale, math.clamp(toggleStartPos.Y.Offset + delta.Y, 0, Gui.AbsoluteSize.Y - ToggleButton.AbsoluteSize.Y)
+        )
+        ToggleButton.Position = newPos
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        toggleDragging = false
+    end
+end)
+
+local function AnimateWindow(window, show)
+    ClearTweens()
+    print("Animating window, show:", show, "Window:", window.Name)
+    if show then
+        window.Visible = true
+        window.Position = UDim2.new(0.5, 0, 0.5, 0)
+        window.Size = UDim2.new(0, 0, 0, 0)
+        window.BackgroundTransparency = 1
+        local tween = CreateTween(window, {
+            Position = UDim2.new(0.5, -Config.Sizes.Window.Width/2, 0.5, -Config.Sizes.Window.Height/2),
+            Size = UDim2.new(0, Config.Sizes.Window.Width, 0, Config.Sizes.Window.Height),
+            BackgroundTransparency = 0
+        })
+        tween:Play()
+        tween.Completed:Once(function()
+            print("Window animation completed, visible:", window.Visible)
+        end)
+    else
+        local tween = CreateTween(window, {
+            Size = UDim2.new(0, 0, 0, 0),
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            BackgroundTransparency = 1
+        })
+        tween:Play()
+        tween.Completed:Once(function()
+            window.Visible = false
+            print("Window hidden")
+        end)
+    end
+end
+
+local MainVisible = false
+ToggleButton.MouseButton1Click:Connect(function()
+    MainVisible = not MainVisible
+    print("Toggle clicked, MainVisible:", MainVisible)
+    for _, window in ipairs(Windows) do
+        AnimateWindow(window, MainVisible)
+    end
+end)
+
+function Fluxcore:MakeWindow(config)
+    local Window = {}
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Size = UDim2.new(0, Config.Sizes.Window.Width, 0, Config.Sizes.Window.Height)
+    MainFrame.Position = UDim2.new(0.5, -Config.Sizes.Window.Width/2, 0.5, -Config.Sizes.Window.Height/2)
+    MainFrame.BackgroundColor3 = Config.Theme.PrimaryColor
+    MainFrame.Active = true
+    MainFrame.Visible = false
+    MainFrame.Name = config.Name or "Window"
+    MainFrame.ClipsDescendants = true
+    MainFrame.ZIndex = 500 -- Ensure window is above other elements
+    MainFrame.Parent = Gui
+    ApplyStyle(MainFrame, nil, true)
+
+    table.insert(Windows, MainFrame)
+
+    local TopBar = Instance.new("TextLabel", MainFrame)
+    TopBar.Size = UDim2.new(1, 0, 0, 40)
+    TopBar.Text = (config.Name or "Fluxcore Window"):gsub("%s+$", "")
+    TopBar.BackgroundColor3 = Config.Theme.SecondaryColor
+    TopBar.TextColor3 = Config.Theme.TextColor
+    TopBar.Font = Enum.Font.GothamBlack
+    TopBar.TextSize = 20
+    TopBar.TextXAlignment = Enum.TextXAlignment.Left
+    TopBar.TextYAlignment = Enum.TextYAlignment.Center
+    TopBar.Position = UDim2.new(0, 10, 0, 0)
+    TopBar.TextTruncate = Enum.TextTruncate.AtEnd
+    TopBar.ClipsDescendants = true
+    ApplyStyle(TopBar)
+
+    local windowDragging, windowDragStart, windowStartPos
+    TopBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            windowDragging = true
+            windowDragStart = input.Position
+            windowStartPos = MainFrame.Position
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if windowDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - windowDragStart
+            local newPos = UDim2.new(
+                windowStartPos.X.Scale, math.clamp(windowStartPos.X.Offset + delta.X, -Config.Sizes.Window.Width/2, Gui.AbsoluteSize.X - Config.Sizes.Window.Width/2),
+                windowStartPos.Y.Scale, math.clamp(windowStartPos.Y.Offset + delta.Y, -Config.Sizes.Window.Height/2, Gui.AbsoluteSize.Y - Config.Sizes.Window.Height/2)
+            )
+            MainFrame.Position = newPos
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            windowDragging = false
+        end
+    end)
+
+    local SideBarScroll = Instance.new("ScrollingFrame", MainFrame)
+    SideBarScroll.Size = UDim2.new(0, Config.Sizes.SidebarWidth, 1, -40)
+    SideBarScroll.Position = UDim2.new(0, 0, 0, 40)
+    SideBarScroll.BackgroundColor3 = Config.Theme.PrimaryColor
+    SideBarScroll.ScrollBarThickness = 3
+    SideBarScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    SideBarScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    SideBarScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+    SideBarScroll.ClipsDescendants = true
+    SideBarScroll.ScrollingEnabled = true
+    ApplyStyle(SideBarScroll)
+
+    local TabButtonLayout = Instance.new("UIListLayout", SideBarScroll)
+    TabButtonLayout.Padding = UDim.new(0, 6)
+    local SideBarPadding = Instance.new("UIPadding", SideBarScroll)
+    SideBarPadding.PaddingTop = UDim.new(0, 5)
+    SideBarPadding.PaddingBottom = UDim.new(0, 5)
+    SideBarPadding.PaddingLeft = UDim.new(0, 8)
+    SideBarPadding.PaddingRight = UDim.new(0, 8)
+
+    local ContentArea = Instance.new("Frame", MainFrame)
+    ContentArea.Size = UDim2.new(1, -Config.Sizes.SidebarWidth, 1, -40)
+    ContentArea.Position = UDim2.new(0, Config.Sizes.SidebarWidth, 0, 40)
+    ContentArea.BackgroundColor3 = Config.Theme.SecondaryColor
+    ContentArea.ClipsDescendants = true
+    ApplyStyle(ContentArea)
+
+    local Tabs = {}
+    local CurrentTab
+
+    function Window:MakeTab(info)
+        local Tab = {}
+        local TabButton = Instance.new("TextButton", SideBarScroll)
+        TabButton.Size = UDim2.new(0, Config.Sizes.TabButton.Width, 0, Config.Sizes.TabButton.Height)
+        TabButton.Text = (info.Name or "Tab"):gsub("%s+$", "")
+        TabButton.BackgroundColor3 = Config.Theme.SecondaryColor
+        TabButton.TextColor3 = Config.Theme.TextColor
+        TabButton.Font = Enum.Font.GothamSemibold
+        TabButton.TextSize = 14
+        TabButton.TextXAlignment = Enum.TextXAlignment.Center
+        TabButton.TextYAlignment = Enum.TextYAlignment.Center
+        TabButton.TextTruncate = Enum.TextTruncate.AtEnd
+        TabButton.ClipsDescendants = true
+        ApplyStyle(TabButton, UDim.new(0, 6))
+
+        TabButton.MouseEnter:Connect(function()
+            if CurrentTab ~= Tab.Content then
+                CreateTween(TabButton, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration):Play()
+            end
+        end)
+        TabButton.MouseLeave:Connect(function()
+            if CurrentTab ~= Tab.Content then
+                CreateTween(TabButton, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+            end
+        end)
+
+        local Content = Instance.new("ScrollingFrame", ContentArea)
+        Content.Size = UDim2.new(1, -10, 1, -10)
+        Content.Position = UDim2.new(0, 5, 0, 5)
+        Content.BackgroundColor3 = Config.Theme.SecondaryColor
+        Content.Visible = false
+        Content.ScrollBarThickness = 3
+        Content.CanvasSize = UDim2.new(0, 0, 0, 0)
+        Content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        Content.ScrollingDirection = Enum.ScrollingDirection.Y
+        Content.ClipsDescendants = true
+        Content:GetPropertyChangedSignal("CanvasSize"):Connect(function()
+            local contentHeight = Content.CanvasSize.Y.Offset
+            local frameHeight = Content.AbsoluteSize.Y
+            Content.ScrollingEnabled = contentHeight > frameHeight
+            Content.ScrollBarImageTransparency = contentHeight > frameHeight and 0 or 1
+        end)
+        ApplyStyle(Content)
+
+        local layout = Instance.new("UIListLayout", Content)
+        layout.Padding = UDim.new(0, 6)
+        local padding = Instance.new("UIPadding", Content)
+        padding.PaddingLeft = UDim.new(0, 8)
+        padding.PaddingRight = UDim.new(0, 8)
+        padding.PaddingTop = UDim.new(0, 8)
+        padding.PaddingBottom = UDim.new(0, 8)
+
+        function Tab:Show()
+            if CurrentTab == Content then
+                Content.Visible = false
+                CreateTween(TabButton, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+                CurrentTab = nil
+            else
+                if CurrentTab then
+                    CurrentTab.Visible = false
+                    CreateTween(CurrentTab, {BackgroundTransparency = 1}, Config.Animation.HoverDuration):Play()
+                end
+                for _, t in pairs(Tabs) do
+                    CreateTween(t.Button, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+                end
+                Content.Visible = true
+                CreateTween(Content, {BackgroundTransparency = 0}, Config.Animation.HoverDuration):Play()
+                CreateTween(TabButton, {BackgroundColor3 = Config.Theme.AccentColor}, Config.Animation.HoverDuration):Play()
+                CurrentTab = Content
+            end
+        end
+
+        TabButton.MouseButton1Click:Connect(Tab.Show)
+        Tab.Content = Content
+
+        function Tab:AddButton(opts)
+            local btn = Instance.new("TextButton", Content)
+            btn.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
+            btn.Text = (opts.Name or "Button"):gsub("%s+$", "")
+            btn.BackgroundColor3 = Config.Theme.SecondaryColor
+            btn.TextColor3 = Config.Theme.TextColor
+            btn.Font = Enum.Font.GothamSemibold
+            btn.TextSize = 15
+            btn.TextXAlignment = Enum.TextXAlignment.Left
+            btn.TextTruncate = Enum.TextTruncate.AtEnd
+            btn.ClipsDescendants = true
+            local btnPadding = Instance.new("UIPadding", btn)
+            btnPadding.PaddingLeft = UDim.new(0, 8)
+            ApplyStyle(btn, UDim.new(0, 6))
+
+            local underline = Instance.new("Frame", btn)
+            underline.Size = UDim2.new(1, -16, 0, 2)
+            underline.Position = UDim2.new(0, 8, 1, -4)
+            underline.BackgroundColor3 = Config.Theme.AccentColor
+            underline.Visible = false
+            local ulCorner = Instance.new("UICorner", underline)
+            ulCorner.CornerRadius = UDim.new(0, 2)
+
+            btn.MouseButton1Click:Connect(function()
+                local clickTween = CreateTween(btn, {BackgroundColor3 = Config.Theme.ClickColor, Size = UDim2.new(1, -2, 0, Config.Sizes.ElementHeight - 2)}, Config.Animation.ClickDuration)
+                clickTween:Play()
+                clickTween.Completed:Once(function()
+                    CreateTween(btn, {BackgroundColor3 = Config.Theme.SecondaryColor, Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)}, Config.Animation.ClickDuration):Play()
+                end)
+                if opts.Callback then opts.Callback() end
+            end)
+            btn.MouseEnter:Connect(function()
+                CreateTween(btn, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration):Play()
+                underline.Visible = true
+            end)
+            btn.MouseLeave:Connect(function()
+                CreateTween(btn, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+                underline.Visible = false
+            end)
+        end
+
+        function Tab:AddLabel(txt)
+            local lbl = Instance.new("TextLabel", Content)
+            lbl.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
+            lbl.Text = (txt or "Label"):gsub("%s+$", "")
+            lbl.BackgroundTransparency = 1
+            lbl.TextColor3 = Config.Theme.TextColor
+            lbl.Font = Enum.Font.GothamSemibold
+            lbl.TextSize = 15
+            lbl.TextXAlignment = Enum.TextXAlignment.Left
+            lbl.TextTruncate = Enum.TextTruncate.AtEnd
+            lbl.ClipsDescendants = true
+            local lblPadding = Instance.new("UIPadding", lbl)
+            lblPadding.PaddingLeft = UDim.new(0, 8)
+        end
+
+        function Tab:AddTextbox(opts)
+            local box = Instance.new("TextBox", Content)
+            box.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
+            box.Text = (opts.Default or ""):gsub("%s+$", "")
+            box.ClearTextOnFocus = opts.TextDisappear or false
+            box.TextColor3 = Config.Theme.TextColor
+            box.Font = Enum.Font.GothamSemibold
+            box.TextSize = 15
+            box.TextXAlignment = Enum.TextXAlignment.Left
+            box.TextTruncate = Enum.TextTruncate.AtEnd
+            box.BackgroundColor3 = Config.Theme.PrimaryColor
+            box.ClipsDescendants = true
+            local boxPadding = Instance.new("UIPadding", box)
+            boxPadding.PaddingLeft = UDim.new(0, 8)
+            ApplyStyle(box, UDim.new(0, 6))
+            box.FocusLost:Connect(function()
+                if opts.Callback then opts.Callback(box.Text) end
+            end)
+            box.MouseEnter:Connect(function()
+                CreateTween(box, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration):Play()
+            end)
+            box.MouseLeave:Connect(function()
+                CreateTween(box, {BackgroundColor3 = Config.Theme.PrimaryColor}, Config.Animation.HoverDuration):Play()
+            end)
+        end
+
+        function Tab:AddDropdown(opts)
+            local dropdownFrame = Instance.new("Frame", Content)
+            dropdownFrame.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
+            dropdownFrame.BackgroundColor3 = Config.Theme.SecondaryColor
+            dropdownFrame.ClipsDescendants = true
+            ApplyStyle(dropdownFrame, UDim.new(0, 6))
+
+            local dropdownButton = Instance.new("TextButton", dropdownFrame)
+            dropdownButton.Size = UDim2.new(1, 0, 1, 0)
+            dropdownButton.BackgroundTransparency = 1
+            dropdownButton.Text = (opts.Default or opts.Name or "Select Option"):gsub("%s+$", "") -- Set default text
+            dropdownButton.TextColor3 = Config.Theme.TextColor
+            dropdownButton.Font = Enum.Font.GothamSemibold
+            dropdownButton.TextSize = 15
+            dropdownButton.TextXAlignment = Enum.TextXAlignment.Left
+            dropdownButton.TextTruncate = Enum.TextTruncate.AtEnd
+            dropdownButton.ClipsDescendants = true
+            local btnPadding = Instance.new("UIPadding", dropdownButton)
+            btnPadding.PaddingLeft = UDim.new(0, 8)
+
+            local dropdownList = Instance.new("Frame", Content)
+            dropdownList.Size = UDim2.new(1, 0, 0, 0)
+            dropdownList.BackgroundColor3 = Config.Theme.SecondaryColor
+            dropdownList.ClipsDescendants = true
+            dropdownList.Visible = false
+            ApplyStyle(dropdownList, UDim.new(0, 6))
+
+            local listLayout = Instance.new("UIListLayout", dropdownList)
+            listLayout.Padding = UDim.new(0, 2)
+
+            local expanded = false
+            local function toggleDropdown()
+                expanded = not expanded
+                dropdownList.Visible = expanded
+                dropdownList.Size = expanded and UDim2.new(1, 0, 0, #opts.Options * Config.Sizes.ElementHeight) or UDim2.new(1, 0, 0, 0)
+                CreateTween(dropdownList, {BackgroundTransparency = expanded and 0 or 1}, Config.Animation.HoverDuration):Play()
+            end
+
+            dropdownButton.MouseButton1Click:Connect(toggleDropdown)
+            dropdownButton.MouseEnter:Connect(function()
+                CreateTween(dropdownFrame, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration):Play()
+            end)
+            dropdownButton.MouseLeave:Connect(function()
+                CreateTween(dropdownFrame, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+            end)
+
+            for _, option in ipairs(opts.Options or {}) do
+                local optionButton = Instance.new("TextButton", dropdownList)
+                optionButton.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
+                optionButton.BackgroundColor3 = Config.Theme.SecondaryColor
+                optionButton.Text = tostring(option):gsub("%s+$", "")
+                optionButton.TextColor3 = Config.Theme.TextColor
+                optionButton.Font = Enum.Font.Gotham
+                optionButton.TextSize = 14
+                optionButton.TextXAlignment = Enum.TextXAlignment.Left
+                optionButton.TextTruncate = Enum.TextTruncate.AtEnd
+                optionButton.ClipsDescendants = true
+                local optPadding = Instance.new("UIPadding", optionButton)
+                optPadding.PaddingLeft = UDim.new(0, 8)
+                ApplyStyle(optionButton, UDim.new(0, 6))
+                optionButton.MouseButton1Click:Connect(function()
+                    dropdownButton.Text = tostring(option):gsub("%s+$", "")
+                    toggleDropdown()
+                    if opts.Callback then opts.Callback(option) end
+                end)
+                optionButton.MouseEnter:Connect(function()
+                    CreateTween(optionButton, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration):Play()
+                end)
+                optionButton.MouseLeave:Connect(function()
+                    CreateTween(optionButton, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+                end)
+            end
+        end
+
+        function Tab:AddSlider(opts)
+            local sliderFrame = Instance.new("Frame", Content)
+            sliderFrame.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight + 10)
+            sliderFrame.BackgroundColor3 = Config.Theme.SecondaryColor
+            sliderFrame.ClipsDescendants = true
+            ApplyStyle(sliderFrame, UDim.new(0, 6))
+
+            local titleLabel = Instance.new("TextLabel", sliderFrame)
+            titleLabel.Size = UDim2.new(0, 100, 1, 0)
+            titleLabel.Position = UDim2.new(0, 8, 0, 0)
+            titleLabel.Text = (opts.Name or "Slider"):gsub("%s+$", "")
+            titleLabel.BackgroundTransparency = 1
+            titleLabel.TextColor3 = Config.Theme.TextColor
+            titleLabel.Font = Enum.Font.GothamSemibold
+            titleLabel.TextSize = 15
+            titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+            titleLabel.TextTruncate = Enum.TextTruncate.AtEnd
+            titleLabel.ClipsDescendants = true
+            local titlePadding = Instance.new("UIPadding", titleLabel)
+            titlePadding.PaddingLeft = UDim.new(0, 8)
+
+            local sliderBar = Instance.new("Frame", sliderFrame)
+            sliderBar.Size = UDim2.new(1, -150, 0, 6)
+            sliderBar.Position = UDim2.new(0, 110, 0.5, -3)
+            sliderBar.BackgroundColor3 = Config.Theme.PrimaryColor
+            sliderBar.ClipsDescendants = true
+            ApplyStyle(sliderBar, UDim.new(0, 3))
+
+            local fill = Instance.new("Frame", sliderBar)
+            fill.Size = UDim2.new(0, 0, 1, 0)
+            fill.BackgroundColor3 = Config.Theme.AccentColor
+            ApplyStyle(fill, UDim.new(0, 3))
+
+            local valueLabel = Instance.new("TextLabel", sliderFrame)
+            valueLabel.Size = UDim2.new(0, 40, 1, 0)
+            valueLabel.Position = UDim2.new(1, -48, 0, 0)
+            valueLabel.BackgroundTransparency = 1
+            valueLabel.TextColor3 = Config.Theme.TextColor
+            valueLabel.Font = Enum.Font.Gotham
+            valueLabel.TextSize = 14
+            valueLabel.Text = string.format("%.2f", opts.Default or opts.Min or 0)
+            valueLabel.TextTruncate = Enum.TextTruncate.AtEnd
+
+            -- Initialize slider fill based on default value
+            local value = opts.Default or opts.Min or 0
+            local relative = (value - opts.Min) / (opts.Max - opts.Min)
+            fill.Size = UDim2.new(math.clamp(relative, 0, 1), 0, 1, 0)
+
+            local dragging = false
+            local function updateValue(inputX)
+                local relative = math.clamp((inputX - sliderBar.AbsolutePosition.X) / sliderBar.AbsoluteSize.X, 0, 1)
+                value = math.floor((opts.Min + (opts.Max - opts.Min) * relative) * 100) / 100
+                fill.Size = UDim2.new(relative, 0, 1, 0)
+                valueLabel.Text = string.format("%.2f", value)
+                if opts.Callback then opts.Callback(value) end
+            end
+
+            sliderBar.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    dragging = true
+                    updateValue(input.Position.X)
+                end
+            end)
+
+            UserInputService.InputChanged:Connect(function(input)
+                if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                    updateValue(input.Position.X)
+                end
+            end)
+
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    dragging = false
+                end
+            end)
+        end
+
+        function Tab:AddToggle(opts)
+            local toggleFrame = Instance.new("Frame", Content)
+            toggleFrame.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
+            toggleFrame.BackgroundColor3 = Config.Theme.SecondaryColor
+            toggleFrame.ClipsDescendants = true
+            ApplyStyle(toggleFrame, UDim.new(0, 6))
+
+            local toggleButton = Instance.new("TextButton", toggleFrame)
+            toggleButton.Size = UDim2.new(1, 0, 1, 0)
+            toggleButton.BackgroundTransparency = 1
+            toggleButton.Text = (opts.Name or "Toggle"):gsub("%s+$", "")
+            toggleButton.TextColor3 = Config.Theme.TextColor
+            toggleButton.Font = Enum.Font.GothamSemibold
+            toggleButton.TextSize = 15
+            toggleButton.TextXAlignment = Enum.TextXAlignment.Left
+            toggleButton.TextTruncate = Enum.TextTruncate.AtEnd
+            toggleButton.ClipsDescendants = true
+            local btnPadding = Instance.new("UIPadding", toggleButton)
+            btnPadding.PaddingLeft = UDim.new(0, 8)
+
+            local toggleIndicator = Instance.new("Frame", toggleFrame)
+            toggleIndicator.Size = UDim2.new(0, Config.Sizes.ToggleIndicator.Width, 0, Config.Sizes.ToggleIndicator.Height)
+            toggleIndicator.Position = UDim2.new(1, -Config.Sizes.ToggleIndicator.Width - 6, 0.5, -Config.Sizes.ToggleIndicator.Height/2)
+            toggleIndicator.BackgroundColor3 = Config.Theme.SecondaryColor
+            ApplyStyle(toggleIndicator, UDim.new(0, Config.Sizes.ToggleIndicator.Height/2))
+
+            local toggleInner = Instance.new("Frame", toggleIndicator)
+            toggleInner.Size = UDim2.new(0.5, -2, 1, -2)
+            toggleInner.Position = UDim2.new(0, 1, 0, 1)
+            toggleInner.BackgroundColor3 = Config.Theme.TextColor
+            ApplyStyle(toggleInner, UDim.new(0, (Config.Sizes.ToggleIndicator.Height-2)/2))
+
+            local state = opts.Default or false
+            local function updateVisual()
+                CreateTween(toggleIndicator, {BackgroundColor3 = state and Config.Theme.AccentColor or Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+                CreateTween(toggleInner, {Position = state and UDim2.new(0.5, 1, 0, 1) or UDim2.new(0, 1, 0, 1)}, Config.Animation.HoverDuration):Play()
+            end
+
+            toggleButton.MouseButton1Click:Connect(function()
+                state = not state
+                updateVisual()
+                if opts.Callback then opts.Callback(state) end
+            end)
+            toggleButton.MouseEnter:Connect(function()
+                CreateTween(toggleFrame, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration):Play()
+            end)
+            toggleButton.MouseLeave:Connect(function()
+                CreateTween(toggleFrame, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+            end)
+
+            updateVisual()
+        end
+
+        function Tab:AddDisplayText(opts)
+            local displayFrame = Instance.new("Frame", Content)
+            displayFrame.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
+            displayFrame.BackgroundColor3 = Config.Theme.SecondaryColor
+            displayFrame.ClipsDescendants = true
+            ApplyStyle(displayFrame, UDim.new(0, 6))
+
+            local displayLabel = Instance.new("TextLabel", displayFrame)
+            displayLabel.Size = UDim2.new(1, 0, 1, 0)
+            displayLabel.BackgroundTransparency = 1
+            displayLabel.Text = (opts.Text or ""):gsub("%s+$", "")
+            displayLabel.TextColor3 = Config.Theme.TextColor
+            displayLabel.Font = Enum.Font.GothamSemibold
+            displayLabel.TextSize = 15
+            displayLabel.TextXAlignment = Enum.TextXAlignment.Left
+            displayLabel.TextTruncate = Enum.TextTruncate.AtEnd
+            displayLabel.ClipsDescendants = true
+            local lblPadding = Instance.new("UIPadding", displayLabel)
+            lblPadding.PaddingLeft = UDim.new(0, 8)
+
+            displayFrame.MouseEnter:Connect(function()
+                CreateTween(displayFrame, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration):Play()
+            end)
+            displayFrame.MouseLeave:Connect(function()
+                CreateTween(displayFrame, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+            end)
+
+            return displayLabel
+        end
+
+        Tab.Button = TabButton
+        table.insert(Tabs, Tab)
+        return Tab
+    end
+
+    return Window
+end
+
+function Fluxcore:MakeNotification(data)
+    local msg = Instance.new("TextLabel", Gui)
+    msg.Size = UDim2.new(0, 250, 0, 50)
+    msg.Position = UDim2.new(1, 0, 1, -60 - (#Windows * 60))
+    msg.Text = (data.Content or "Notification"):gsub("%s+$", "")
+    msg.BackgroundColor3 = data.Type == "error" and Color3.fromRGB(200, 50, 50) or Color3.fromRGB(50, 150, 50)
+    msg.TextColor3 = Config.Theme.TextColor
+    msg.Font = Enum.Font.GothamSemibold
+    msg.TextSize = 14
+    msg.TextWrapped = true
+    msg.TextXAlignment = Enum.TextXAlignment.Left
+    msg.TextTruncate = Enum.TextTruncate.AtEnd
+    msg.ClipsDescendants = true
+    msg.ZIndex = 1000
+    local msgPadding = Instance.new("UIPadding", msg)
+    msgPadding.PaddingLeft = UDim.new(0, 8)
+    ApplyStyle(msg, nil, true)
+
+    local tween = CreateTween(msg, {Position = UDim2.new(1, -260, 1, -60 - (#Windows * 60))}, 0.4)
+    tween:Play()
+    game:GetService("Debris"):AddItem(msg, data.Time or 3)
+end
+
+function Fluxcore:ShowSplashScreen()
+    print("Showing splash screen")
+    local splash = Instance.new("Frame", Gui)
+    splash.Size = UDim2.new(0, 300, 0, 150)
+    splash.Position = UDim2.new(0.5, -150, 0.5, -75)
+    splash.BackgroundColor3 = Config.Theme.PrimaryColor
+    splash.ZIndex = 1000
+    splash.ClipsDescendants = true
+    ApplyStyle(splash, nil, true)
+
+    local title = Instance.new("TextLabel", splash)
+    title.Size = UDim2.new(1, 0, 0.6, 0)
+    title.Position = UDim2.new(0, 0, 0, 0)
+    title.BackgroundTransparency = 1
+    title.Text = "FluxCore.Hub"
+    title.TextColor3 = Config.Theme.TextColor
+    title.Font = Enum.Font.GothamBlack
+    title.TextSize = 28
+    title.TextXAlignment = Enum.TextXAlignment.Center
+    title.TextYAlignment = Enum.TextYAlignment.Center
+
+    local credit = Instance.new("TextLabel", splash)
+    credit.Size = UDim2.new(1, 0, 0.4, 0)
+    credit.Position = UDim2.new(0, 0, 0.6, 0)
+    credit.BackgroundTransparency = 1
+    credit.Text = "Made by Alkaizar Hssm"
+    credit.TextColor3 = Config.Theme.TextColor
+    credit.Font = Enum.Font.GothamSemibold
+    credit.TextSize = 18
+    credit.TextXAlignment = Enum.TextXAlignment.Center
+    credit.TextYAlignment = Enum.TextYAlignment.Center
+
+    splash.BackgroundTransparency = 1
+    title.TextTransparency = 1
+    credit.TextTransparency = 1
+    splash.Size = UDim2.new(0, 0, 0, 0)
+    local fadeIn = CreateTween(splash, {
+        BackgroundTransparency = 0,
+        Size = UDim2.new(0, 300, 0, 150)
+    }, 0.5)
+    local titleFadeIn = CreateTween(title, {TextTransparency = 0}, 0.5)
+    local creditFadeIn = CreateTween(credit, {TextTransparency = 0}, 0.5)
+    fadeIn:Play()
+    titleFadeIn:Play()
+    creditFadeIn:Play()
+
+    task.delay(3, function()
+        local fadeOut = CreateTween(splash, {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(0, 0, 0, 0)
+        }, 0.5)
+        local titleFadeOut = CreateTween(title, {TextTransparency = 1}, 0.5)
+        local creditFadeOut = CreateTween(credit, {TextTransparency = 1}, 0.5)
+        fadeOut:Play()
+        titleFadeOut:Play()
+        creditFadeOut:Play()
+        fadeOut.Completed:Once(function()
+            splash:Destroy()
+            print("Splash screen destroyed")
+        end)
+    end)
+end
+
+function Fluxcore:Init()
+    print("Fluxcore.Hub Initialized")
+    Fluxcore:ShowSplashScreen()
+    RunService:BindToRenderStep("FluxcoreUpdate", Enum.RenderPriority.Input.Value, function()
+        if Gui and not Gui.Enabled then
+            Gui.Enabled = true
+            print("Re-enabled GUI")
+        end
+    end)
+end
+
+function Fluxcore:Destroy()
+    RunService:UnbindFromRenderStep("FluxcoreUpdate")
+    ClearTweens()
+    if Gui then Gui:Destroy() end
+    print("Fluxcore destroyed")
+end
+
+-- Replace DemonLib with Fluxcore if loadstring failed
+DemonLib = Fluxcore
+
+-- Create GUI
+local Window = DemonLib:MakeWindow({Name = "Demon GUI", HidePremium = false})
+local MainTab = Window:MakeTab({Name = "Main"})
+local AimbotTab = Window:MakeTab({Name = "Aimbots"})
+
+-- Highlight Players Toggle (Main Tab)
+local highlightEnabled = false
+local highlightConnections = {}
+
+local function highlightPlayer(player)
+    if player == LocalPlayer then return end
+    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
+
+    local oldHighlight = player.Character:FindFirstChild("PlayerHighlight")
+    if oldHighlight then
+        oldHighlight:Destroy()
+    end
+
+    if highlightEnabled then
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "PlayerHighlight"
+        highlight.Adornee = player.Character
+        highlight.FillColor = Color3.fromRGB(0, 255, 255)
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        highlight.FillTransparency = 0.5
+        highlight.OutlineTransparency = 0
+        highlight.Parent = player.Character
+    end
+end
+
+local function clearHighlights()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Character then
+            local hl = player.Character:FindFirstChild("PlayerHighlight")
+            if hl then hl:Destroy() end
+        end
+    end
+end
+
+MainTab:AddToggle({
+    Name = "Highlight Players",
+    Default = false,
+    Callback = function(state)
+        highlightEnabled = state
+        print("Highlight Players toggled:", state)
+
+        for _, conn in pairs(highlightConnections) do
+            if conn.Connected then conn:Disconnect() end
+        end
+        highlightConnections = {}
+
+        if highlightEnabled then
+            for _, player in pairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer then
+                    table.insert(highlightConnections, player.CharacterAdded:Connect(function()
+                        task.wait(1)
+                        highlightPlayer(player)
+                    end))
+                    if player.Character then
+                        highlightPlayer(player)
+                    end
+                end
+            end
+
+            table.insert(highlightConnections, Players.PlayerAdded:Connect(function(player)
+                table.insert(highlightConnections, player.CharacterAdded:Connect(function()
+                    task.wait(1)
+                    highlightPlayer(player)
+                end))
+            end))
+        else
+            clearHighlights()
+        end
+    end
+})
+
+-- Speed Slider (Main Tab)
+MainTab:AddSlider({
+    Name = "Speed",
+    Min = 16,
+    Max = 100,
+    Default = 16,
+    Callback = function(val)
+        local player = Players.LocalPlayer
+        local character = player.Character or player.CharacterAdded:Wait()
+        local humanoid = character:WaitForChild("Humanoid")
+        humanoid.WalkSpeed = val
+        print("Speed set to:", val)
+    end
+})
+
+-- Infinity Yield Button (Main Tab)
+MainTab:AddButton({
+    Name = "Infinity Yield",
+    Callback = function()
+        print("Loading Infinity Yield")
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+    end
+})
+
+-- Aimbot (Aimbots Tab)
+local fov = 136
+local targetMode = "NPC"
+local teamCheckEnabled = true
+local aimTargetPart = "Head"
+local highlightTeammates = true
+local wallCheckEnabled = true
+local aimStrength = 0.4
+
+local FOVring = Drawing.new("Circle")
+FOVring.Visible = false
+FOVring.Thickness = 2
+FOVring.Color = Color3.fromRGB(255, 255, 255)
+FOVring.Filled = false
+FOVring.Radius = fov
+FOVring.Position = Cam.ViewportSize / 2
+
+local isAiming = false
+local validTargets = {}
+local raycastParams = RaycastParams.new()
+raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+
+local function isValidTarget(obj)
+    if targetMode == "NPC" then
+        return obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0
+            and obj:FindFirstChild("Head") and (obj:FindFirstChild("Torso") or obj:FindFirstChild("UpperTorso") or obj:FindFirstChild("HumanoidRootPart"))
+            and not Players:GetPlayerFromCharacter(obj)
+    elseif targetMode == "Player" then
+        local player = Players:GetPlayerFromCharacter(obj)
+        if player and player ~= LocalPlayer and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0
+            and obj:FindFirstChild("Head") and (obj:FindFirstChild("Torso") or obj:FindFirstChild("UpperTorso") or obj:FindFirstChild("HumanoidRootPart")) then
+            if teamCheckEnabled then
+                if highlightTeammates then
+                    return true
+                else
+                    return player.Team ~= LocalPlayer.Team
+                end
+            end
+            return true
+        end
+    end
+    return false
+end
+
+local function highlightTarget(target)
+    local old = target:FindFirstChild("TargetHighlight")
+    if old then old:Destroy() end
+
+    local h = Instance.new("Highlight")
+    h.Name = "TargetHighlight"
+    h.Adornee = target
+    if targetMode == "Player" and teamCheckEnabled then
+        local player = Players:GetPlayerFromCharacter(target)
+        if player then
+            if player.Team == LocalPlayer.Team and highlightTeammates then
+                h.FillColor = Color3.fromRGB(0, 255, 0)
+            elseif player.Team ~= LocalPlayer.Team then
+                h.FillColor = Color3.fromRGB(255, 0, 0)
+            else
+                h.FillColor = Color3.fromRGB(0, 255, 255)
+            end
+        else
+            h.FillColor = Color3.fromRGB(0, 255, 255)
+        end
+    else
+        h.FillColor = Color3.fromRGB(0, 255, 255)
+    end
+    h.OutlineColor = Color3.fromRGB(255, 255, 255)
+    h.FillTransparency = 0.2
+    h.OutlineTransparency = 0
+    h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    h.Parent = target
+end
+
+local function unhighlightTarget(target)
+    local h = target:FindFirstChild("TargetHighlight")
+    if h then h:Destroy() end
+end
+
+local function updateTargets()
+    local tempTable = {}
+    if targetMode == "NPC" then
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if isValidTarget(obj) then
+                tempTable[obj] = true
+            end
+        end
+    elseif targetMode == "Player" then
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character and isValidTarget(player.Character) then
+                tempTable[player.Character] = true
+            end
+        end
+    end
+
+    for i = #validTargets, 1, -1 do
+        local target = validTargets[i]
+        if not tempTable[target] then
+            table.remove(validTargets, i)
+            unhighlightTarget(target)
+        end
+    end
+
+    for target in pairs(tempTable) do
+        if not table.find(validTargets, target) then
+            table.insert(validTargets, target)
+            if isAiming then highlightTarget(target) end
+        end
+    end
+end
+
+local function handleDescendant(descendant)
+    if isValidTarget(descendant) then
+        table.insert(validTargets, descendant)
+        if isAiming then highlightTarget(descendant) end
+        descendant:WaitForChild("Humanoid").Destroying:Connect(function()
+            for i = #validTargets, 1, -1 do
+                if validTargets[i] == descendant then
+                    table.remove(validTargets, i)
+                    unhighlightTarget(descendant)
+                    break
+                end
+            end
+        end)
+    end
+end
+
+workspace.DescendantAdded:Connect(handleDescendant)
+
+local function updateDrawings()
+    FOVring.Position = Cam.ViewportSize / 2
+    FOVring.Radius = fov * (Cam.ViewportSize.Y / 1080)
+end
+
+local function getTarget()
+    local nearest, minDistance = nil, math.huge
+    local viewportCenter = Cam.ViewportSize / 2
+    raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
+
+    for _, target in ipairs(validTargets) do
+        local targetPart = target:FindFirstChild(aimTargetPart)
+        if not targetPart and aimTargetPart == "Torso" then
+            targetPart = target:FindFirstChild("UpperTorso") or target:FindFirstChild("HumanoidRootPart")
+        end
+        if targetPart then
+            local screenPos, visible = Cam:WorldToViewportPoint(targetPart.Position)
+            if visible and screenPos.Z > 0 then
+                local isValid = true
+                if wallCheckEnabled then
+                    local ray = workspace:Raycast(Cam.CFrame.Position, (targetPart.Position - Cam.CFrame.Position).Unit * 1000, raycastParams)
+                    isValid = ray and ray.Instance:IsDescendantOf(target)
+                end
+                if isValid then
+                    local player = Players:GetPlayerFromCharacter(target)
+                    if targetMode == "Player" and teamCheckEnabled and player and player.Team == LocalPlayer.Team then
+                        continue
+                    end
+                    local distance = (Vector2.new(screenPos.X, screenPos.Y) - viewportCenter).Magnitude
+                    if distance < minDistance and distance < fov then
+                        minDistance = distance
+                        nearest = target
+                    end
+                end
+            end
+        end
+    end
+    return nearest
+end
+
+local function aim(position)
+    local currentCF = Cam.CFrame
+    local direction = (position - currentCF.Position).Unit
+    local newLookVector = currentCF.LookVector:Lerp(direction, aimStrength)
+    Cam.CFrame = CFrame.new(currentCF.Position, currentCF.Position + newLookVector)
+end
+
+local lastUpdate = 0
+local UPDATE_INTERVAL = 0.4
+RunService.Heartbeat:Connect(function(dt)
+    updateDrawings()
+    lastUpdate += dt
+    if lastUpdate >= UPDATE_INTERVAL then
+        updateTargets()
+        lastUpdate = 0
+    end
+    if isAiming then
+        local target = getTarget()
+        if target and target:FindFirstChild(aimTargetPart) then
+            aim(target[aimTargetPart].Position)
+        end
+    end
+end)
+
+-- Aimbot Controls (Aimbots Tab)
+AimbotTab:AddDropdown({
+    Name = "Target Mode",
+    Options = {"NPC", "Player"},
+    Default = "NPC",
+    Callback = function(value)
+        targetMode = value
+        print("Target Mode set to:", value)
+        updateTargets()
+        if isAiming then
+            for _, target in ipairs(validTargets) do
+                highlightTarget(target)
+            end
+        else
+            for _, target in ipairs(validTargets) do
+                unhighlightTarget(target)
+            end
+        end
+    end
+})
+
+AimbotTab:AddToggle({
+    Name = "Aimbot",
+    Default = false,
+    Callback = function(state)
+        isAiming = state
+        FOVring.Visible = state
+        print("Aimbot toggled:", state)
+        for _, target in ipairs(validTargets) do
+            if state then
+                highlightTarget(target)
+            else
+                unhighlightTarget(target)
+            end
+        end
+    end
+})
+
+AimbotTab:AddSlider({
+    Name = "FOV Size",
+    Min = 50,
+    Max = 300,
+    Default = 136,
+    Callback = function(val)
+        fov = val
+        FOVring.Radius = fov * (Cam.ViewportSize.Y / 1080)
+        print("FOV Size set to:", val)
+    end
+})
+
+AimbotTab:AddDropdown({
+    Name = "FOV Color",
+    Options = {"White", "Blue", "Green", "Red"},
+    Default = "White",
+    Callback = function(value)
+        if value == "White" then
+            FOVring.Color = Color3.fromRGB(255, 255, 255)
+        elseif value == "Blue" then
+            FOVring.Color = Color3.fromRGB(0, 0, 255)
+        elseif value == "Green" then
+            FOVring.Color = Color3.fromRGB(0, 255, 0)
+        elseif value == "Red" then
+            FOVring.Color = Color3.fromRGB(255, 0, 0)
+        end
+        print("FOV Color set to:", value)
+    end
+})
+
+AimbotTab:AddToggle({
+    Name = "Team Check",
+    Default = true,
+    Callback = function(state)
+        teamCheckEnabled = state
+        print("Team Check toggled:", state)
+        updateTargets()
+        if isAiming then
+            for _, target in ipairs(validTargets) do
+                highlightTarget(target)
+            end
+        else
+            for _, target in ipairs(validTargets) do
+                unhighlightTarget(target)
+            end
+        end
+    end
+})
+
+AimbotTab:AddToggle({
+    Name = "Highlight Teammates",
+    Default = true,
+    Callback = function(state)
+        highlightTeammates = state
+        print("Highlight Teammates toggled:", state)
+        updateTargets()
+        if isAiming then
+            for _, target in ipairs(validTargets) do
+                highlightTarget(target)
+            end
+        else
+            for _, target in ipairs(validTargets) do
+                unhighlightTarget(target)
+            end
+        end
+    end
+})
+
+AimbotTab:AddToggle({
+    Name = "Wall Check",
+    Default = true,
+    Callback = function(state)
+        wallCheckEnabled = state
+        print("Wall Check toggled:", state)
+    end
+})
+
+AimbotTab:AddSlider({
+    Name = "Aimbot Strength",
+    Min = 0.1,
+    Max = 1,
+    Default = 0.4,
+    Callback = function(val)
+        aimStrength = val
+        print("Aimbot Strength set to:", val)
+    end
+})
+
+AimbotTab:AddDropdown({
+    Name = "Aim Target",
+    Options = {"Head", "Torso"},
+    Default = "Head",
+    Callback = function(value)
+        aimTargetPart = value
+        print("Aim Target set to:", value)
+    end
+})
+
+-- Cleanup
+workspace.DescendantRemoved:Connect(function(descendant)
+    if isValidTarget(descendant) then
+        for i = #validTargets, 1, -1 do
+            if validTargets[i] == descendant then
+                table.remove(validTargets, i)
+                unhighlightTarget(descendant)
+                break
+            end
+        end
+    end
+end)
+
+Players.PlayerRemoving:Connect(function()
+    FOVring:Remove()
+end)
+
+-- Notification and Initialization
+DemonLib:MakeNotification({
+    Content = "GUI Loaded!",
+    Time = 3
+})
+
+print("Initializing DemonLib")
+DemonLib:Init()
+updateTargets()
