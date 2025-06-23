@@ -766,7 +766,7 @@ function Fluxcore:MakeNotification(data)
     msg.Position = UDim2.new(1, 10, 1, -70 - (#Windows * 70))
     msg.Text = (data.Content or "Notification"):gsub("%s+$", "")
     msg.BackgroundColor3 = data.Type == "error" and Color3.fromRGB(220, 60, 60) or Color3.fromRGB(60, 170, 60)
-    msg.TextColor3 = Color3.new(1, 1, 1) -- Set to white for visibility, matching toggle
+    msg.TextColor3 = Color3.fromRGB(255, 255, 255) -- Set text color to white for visibility
     msg.Font = Enum.Font.GothamMedium
     msg.TextSize = 14
     msg.TextWrapped = true
@@ -775,16 +775,10 @@ function Fluxcore:MakeNotification(data)
     msg.TextTruncate = Enum.TextTruncate.AtEnd
     msg.ClipsDescendants = true
 
-    -- Add subtle text stroke for better readability
-    local textStroke = Instance.new("UIStroke", msg)
-    textStroke.Thickness = 0.5
-    textStroke.Color = Color3.new(0, 0, 0) -- Black stroke for contrast with white text
-    textStroke.Transparency = 0.7
-    textStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
-
     local msgPadding = Instance.new("UIPadding", msg)
     msgPadding.PaddingLeft = UDim.new(0, 12)
     msgPadding.PaddingRight = UDim.new(0, 12)
+
     ApplyStyle(msg, UDim.new(0, 12), true, true)
 
     local msgGlow = Instance.new("UIStroke", msg)
@@ -793,11 +787,18 @@ function Fluxcore:MakeNotification(data)
     msgGlow.Transparency = 0.8
     msgGlow.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
 
-    local tweenIn = CreateTween(msg, {Position = UDim2.new(1, -290, 1, -70 - (#Windows * 70))}, 0.5)
+    local tweenIn = CreateTween(msg, {
+        Position = UDim2.new(1, -290, 1, -70 - (#Windows * 70))
+    }, 0.5)
     tweenIn:Play()
+
     tweenIn.Completed:Once(function()
         wait(data.Time or 3)
-        local tweenOut = CreateTween(msg, {Position = UDim2.new(1, 10, 1, -70 - (#Windows * 70)), BackgroundTransparency = 1}, 0.5)
+        local tweenOut = CreateTween(msg, {
+            Position = UDim2.new(1, 10, 1, -70 - (#Windows * 70)),
+            BackgroundTransparency = 1,
+            TextTransparency = 1, -- Fade out the text as well
+        }, 0.5)
         tweenOut:Play()
         tweenOut.Completed:Once(function()
             msg:Destroy()
