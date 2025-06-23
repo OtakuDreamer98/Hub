@@ -766,7 +766,7 @@ function Fluxcore:MakeNotification(data)
     msg.Position = UDim2.new(1, 10, 1, -70 - (#Windows * 70))
     msg.Text = (data.Content or "Notification"):gsub("%s+$", "")
     msg.BackgroundColor3 = data.Type == "error" and Color3.fromRGB(220, 60, 60) or Color3.fromRGB(60, 170, 60)
-    msg.TextColor3 = Config.Theme.TextColor
+    msg.TextColor3 = Color3.new(1, 1, 1) -- Set to white for visibility, matching toggle
     msg.Font = Enum.Font.GothamMedium
     msg.TextSize = 14
     msg.TextWrapped = true
@@ -774,6 +774,14 @@ function Fluxcore:MakeNotification(data)
     msg.TextYAlignment = Enum.TextYAlignment.Center
     msg.TextTruncate = Enum.TextTruncate.AtEnd
     msg.ClipsDescendants = true
+
+    -- Add subtle text stroke for better readability
+    local textStroke = Instance.new("UIStroke", msg)
+    textStroke.Thickness = 0.5
+    textStroke.Color = Color3.new(0, 0, 0) -- Black stroke for contrast with white text
+    textStroke.Transparency = 0.7
+    textStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+
     local msgPadding = Instance.new("UIPadding", msg)
     msgPadding.PaddingLeft = UDim.new(0, 12)
     msgPadding.PaddingRight = UDim.new(0, 12)
