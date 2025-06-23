@@ -137,8 +137,23 @@ end)
 -- Window Animation
 local function AnimateWindow(window, show)
     ClearTweens()
-    local targetWidth = window.Size.X.Offset
-    local targetHeight = window.Size.Y.Offset
+    -- Recalculate window size based on current screen size
+    local screenSize = Gui.AbsoluteSize
+    local targetWidth = math.clamp(
+        screenSize.X * Config.Sizes.Window.Width.Scale,
+        Config.Sizes.Window.Width.Min,
+        Config.Sizes.Window.Width.Max
+    )
+    local targetHeight = math.clamp(
+        screenSize.Y * Config.Sizes.Window.Height.Scale,
+        Config.Sizes.Window.Height.Min,
+        Config.Sizes.Window.Height.Max
+    )
+    
+    -- Update window size to ensure it matches current screen
+    window.Size = UDim2.new(0, targetWidth, 0, targetHeight)
+    window.Position = UDim2.new(0.5, -targetWidth/2, 0.5, -targetHeight/2)
+
     if show then
         window.Visible = true
         window.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -197,6 +212,10 @@ function Fluxcore:MakeWindow(config)
     MainFrame.ClipsDescendants = true
     MainFrame.Parent = Gui
     ApplyStyle(MainFrame, nil, true)
+
+    -- Store target size as attributes for reference
+    MainFrame:SetAttribute("TargetWidth", windowWidth)
+    MainFrame:SetAttribute("TargetHeight", windowHeight)
 
     table.insert(Windows, MainFrame)
 
