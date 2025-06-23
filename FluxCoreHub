@@ -801,4 +801,4 @@ function Fluxcore:Destroy()
     if Gui then Gui:Destroy() end
 end
 
-return Fluxcore 
+return Fluxcore
