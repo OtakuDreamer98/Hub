@@ -27,7 +27,10 @@ local Config = {
         EasingDirection = Enum.EasingDirection.InOut
     },
     Sizes = {
-        Window = {Width = 600, Height = 400},
+        Window = {
+            Width = { Scale = 0.8, Min = 300, Max = 600 }, -- 80% of screen width, clamped between 300 and 600 pixels
+            Height = { Scale = 0.7, Min = 250, Max = 400 } -- 70% of screen height, clamped between 250 and 400 pixels
+        },
         ToggleButton = {Width = 50, Height = 50},
         TabButton = {Height = 35, Width = 104},
         ElementHeight = 32,
@@ -53,7 +56,7 @@ local function ApplyStyle(obj, radius, applyShadow)
     local corner = Instance.new("UICorner", obj)
     corner.CornerRadius = radius or Config.Theme.CornerRadius
     local stroke = Instance.new("UIStroke", obj)
-    stroke.Thickness = 2 -- Bolder for buttons and consistency
+    stroke.Thickness = 2
     stroke.Color = Config.Theme.BorderColor
     if applyShadow then
         local shadow = Instance.new("UIStroke", obj)
@@ -83,7 +86,7 @@ local function ClearTweens()
     ActiveTweens = {}
 end
 
--- Toggle<Button Setup
+-- Toggle Button Setup
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Size = UDim2.new(0, Config.Sizes.ToggleButton.Width, 0, Config.Sizes.ToggleButton.Height)
 ToggleButton.Position = UDim2.new(0, 10, 0.5, -25)
@@ -134,14 +137,16 @@ end)
 -- Window Animation
 local function AnimateWindow(window, show)
     ClearTweens()
+    local targetWidth = window.Size.X.Offset
+    local targetHeight = window.Size.Y.Offset
     if show then
         window.Visible = true
         window.Position = UDim2.new(0.5, 0, 0.5, 0)
         window.Size = UDim2.new(0, 0, 0, 0)
         window.BackgroundTransparency = 1
         CreateTween(window, {
-            Position = UDim2.new(0.5, -Config.Sizes.Window.Width/2, 0.5, -Config.Sizes.Window.Height/2),
-            Size = UDim2.new(0, Config.Sizes.Window.Width, 0, Config.Sizes.Window.Height),
+            Position = UDim2.new(0.5, -targetWidth/2, 0.5, -targetHeight/2),
+            Size = UDim2.new(0, targetWidth, 0, targetHeight),
             BackgroundTransparency = 0
         }):Play()
     else
@@ -169,8 +174,22 @@ end)
 function Fluxcore:MakeWindow(config)
     local Window = {}
     local MainFrame = Instance.new("Frame")
-    MainFrame.Size = UDim2.new(0, Config.Sizes.Window.Width, 0, Config.Sizes.Window.Height)
-    MainFrame.Position = UDim2.new(0.5, -Config.Sizes.Window.Width/2, 0.5, -Config.Sizes.Window.Height/2)
+    
+    -- Calculate dynamic window size based on screen size
+    local screenSize = Gui.AbsoluteSize
+    local windowWidth = math.clamp(
+        screenSize.X * Config.Sizes.Window.Width.Scale,
+        Config.Sizes.Window.Width.Min,
+        Config.Sizes.Window.Width.Max
+    )
+    local windowHeight = math.clamp(
+        screenSize.Y * Config.Sizes.Window.Height.Scale,
+        Config.Sizes.Window.Height.Min,
+        Config.Sizes.Window.Height.Max
+    )
+    
+    MainFrame.Size = UDim2.new(0, windowWidth, 0, windowHeight)
+    MainFrame.Position = UDim2.new(0.5, -windowWidth/2, 0.5, -windowHeight/2)
     MainFrame.BackgroundColor3 = Config.Theme.PrimaryColor
     MainFrame.Active = true
     MainFrame.Visible = false
@@ -210,8 +229,8 @@ function Fluxcore:MakeWindow(config)
         if windowDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             local delta = input.Position - windowDragStart
             local newPos = UDim2.new(
-                windowStartPos.X.Scale, math.clamp(windowStartPos.X.Offset + delta.X, -Config.Sizes.Window.Width/2, Gui.AbsoluteSize.X - Config.Sizes.Window.Width/2),
-                windowStartPos.Y.Scale, math.clamp(windowStartPos.Y.Offset + delta.Y, -Config.Sizes.Window.Height/2, Gui.AbsoluteSize.Y - Config.Sizes.Window.Height/2)
+                windowStartPos.X.Scale, math.clamp(windowStartPos.X.Offset + delta.X, -windowWidth/2, Gui.AbsoluteSize.X - windowWidth/2),
+                windowStartPos.Y.Scale, math.clamp(windowStartPos.Y.Offset + delta.Y, -windowHeight/2, Gui.AbsoluteSize.Y - windowHeight/2)
             )
             MainFrame.Position = newPos
         end
@@ -233,7 +252,7 @@ function Fluxcore:MakeWindow(config)
     SideBarScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
     SideBarScroll.ScrollingDirection = Enum.ScrollingDirection.Y
     SideBarScroll.ClipsDescendants = true
-    SideBarScroll.ScrollingEnabled = true -- Ensure scrolling is enabled
+    SideBarScroll.ScrollingEnabled = true
     ApplyStyle(SideBarScroll)
 
     local TabButtonLayout = Instance.new("UIListLayout", SideBarScroll)
@@ -293,7 +312,6 @@ function Fluxcore:MakeWindow(config)
         Content.AutomaticCanvasSize = Enum.AutomaticSize.Y
         Content.ScrollingDirection = Enum.ScrollingDirection.Y
         Content.ClipsDescendants = true
-        -- Conditional scrolling
         Content:GetPropertyChangedSignal("CanvasSize"):Connect(function()
             local contentHeight = Content.CanvasSize.Y.Offset
             local frameHeight = Content.AbsoluteSize.Y
@@ -349,7 +367,6 @@ function Fluxcore:MakeWindow(config)
             btnPadding.PaddingLeft = UDim.new(0, 8)
             ApplyStyle(btn, UDim.new(0, 6))
 
-            -- Underline effect
             local underline = Instance.new("Frame", btn)
             underline.Size = UDim2.new(1, -16, 0, 2)
             underline.Position = UDim2.new(0, 8, 1, -4)
@@ -359,7 +376,6 @@ function Fluxcore:MakeWindow(config)
             ulCorner.CornerRadius = UDim.new(0, 2)
 
             btn.MouseButton1Click:Connect(function()
-                -- Click animation
                 local clickTween = CreateTween(btn, {BackgroundColor3 = Config.Theme.ClickColor, Size = UDim2.new(1, -2, 0, Config.Sizes.ElementHeight - 2)}, Config.Animation.ClickDuration)
                 clickTween:Play()
                 clickTween.Completed:Once(function()
@@ -619,44 +635,41 @@ function Fluxcore:MakeWindow(config)
 
             updateVisual()
         end
-        
+
         function Tab:AddDisplayText(opts)
-    local displayFrame = Instance.new("Frame", Content)
-    displayFrame.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
-    displayFrame.BackgroundColor3 = Config.Theme.SecondaryColor
-    displayFrame.ClipsDescendants = true
-    ApplyStyle(displayFrame, UDim.new(0, 6))
+            local displayFrame = Instance.new("Frame", Content)
+            displayFrame.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
+            displayFrame.BackgroundColor3 = Config.Theme.SecondaryColor
+            displayFrame.ClipsDescendants = true
+            ApplyStyle(displayFrame, UDim.new(0, 6))
 
-    local displayLabel = Instance.new("TextLabel", displayFrame)
-    displayLabel.Size = UDim2.new(1, 0, 1, 0)
-    displayLabel.BackgroundTransparency = 1
-    displayLabel.Text = (opts.Text or ""):gsub("%s+$", "")
-    displayLabel.TextColor3 = Config.Theme.TextColor
-    displayLabel.Font = Enum.Font.GothamSemibold
-    displayLabel.TextSize = 15
-    displayLabel.TextXAlignment = Enum.TextXAlignment.Left
-    displayLabel.TextTruncate = Enum.TextTruncate.AtEnd
-    displayLabel.ClipsDescendants = true
-    local lblPadding = Instance.new("UIPadding", displayLabel)
-    lblPadding.PaddingLeft = UDim.new(0, 8)
+            local displayLabel = Instance.new("TextLabel", displayFrame)
+            displayLabel.Size = UDim2.new(1, 0, 1, 0)
+            displayLabel.BackgroundTransparency = 1
+            displayLabel.Text = (opts.Text or ""):gsub("%s+$", "")
+            displayLabel.TextColor3 = Config.Theme.TextColor
+            displayLabel.Font = Enum.Font.GothamSemibold
+            displayLabel.TextSize = 15
+            displayLabel.TextXAlignment = Enum.TextXAlignment.Left
+            displayLabel.TextTruncate = Enum.TextTruncate.AtEnd
+            displayLabel.ClipsDescendants = true
+            local lblPadding = Instance.new("UIPadding", displayLabel)
+            lblPadding.PaddingLeft = UDim.new(0, 8)
 
-    -- Hover effect
-    displayFrame.MouseEnter:Connect(function()
-        CreateTween(displayFrame, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration):Play()
-    end)
-    displayFrame.MouseLeave:Connect(function()
-        CreateTween(displayFrame, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
-    end)
+            displayFrame.MouseEnter:Connect(function()
+                CreateTween(displayFrame, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration):Play()
+            end)
+            displayFrame.MouseLeave:Connect(function()
+                CreateTween(displayFrame, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+            end)
 
-    -- Optional: Store connections for cleanup
-    local connections = {}
-    table.insert(connections, displayFrame.MouseEnter)
-    table.insert(connections, displayFrame.MouseLeave)
+            local connections = {}
+            table.insert(connections, displayFrame.MouseEnter)
+            table.insert(connections, displayFrame.MouseLeave)
 
-    -- Return the label for external updates
-    return displayLabel
-end
-               
+            return displayLabel
+        end
+
         Tab.Button = TabButton
         table.insert(Tabs, Tab)
         return Tab
