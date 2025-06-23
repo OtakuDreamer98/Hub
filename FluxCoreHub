@@ -407,8 +407,7 @@ function Fluxcore:MakeWindow(config)
     btn.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
     btn.Text = (opts.Name or "Button"):gsub("%s+$", "")
     btn.BackgroundColor3 = Config.Theme.SecondaryColor
-    -- Ensure high-contrast text color (e.g., dynamically choose based on background)
-    btn.TextColor3 = Config.Theme.TextColor or Color3.new(1, 1, 1) -- Fallback to white if undefined
+    btn.TextColor3 = Color3.new(1, 1, 1) -- Set text to white, matching toggle's visible text
     btn.Font = Enum.Font.GothamSemibold
     btn.TextSize = 14
     btn.TextXAlignment = Enum.TextXAlignment.Left
@@ -418,7 +417,7 @@ function Fluxcore:MakeWindow(config)
     -- Add subtle text stroke for better readability
     local textStroke = Instance.new("UIStroke", btn)
     textStroke.Thickness = 0.5
-    textStroke.Color = Color3.new(0, 0, 0) -- Black stroke for contrast
+    textStroke.Color = Color3.new(0, 0, 0) -- Black stroke for contrast with white text
     textStroke.Transparency = 0.7
     textStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
 
@@ -432,44 +431,22 @@ function Fluxcore:MakeWindow(config)
     BtnGlow.Transparency = 1
     BtnGlow.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
 
-    -- Helper function to ensure text contrast
-    local function updateTextContrast(backgroundColor)
-        -- Simple luminance calculation to determine if background is light or dark
-        local r, g, b = backgroundColor.R, backgroundColor.G, backgroundColor.B
-        local luminance = (0.299 * r + 0.587 * g + 0.114 * b)
-        btn.TextColor3 = luminance > 0.5 and Color3.new(0, 0, 0) or Color3.new(1, 1, 1) -- Black for light, white for dark
-        textStroke.Color = luminance > 0.5 and Color3.new(1, 1, 1) or Color3.new(0, 0, 0) -- Opposite for stroke
-    end
-    updateTextContrast(Config.Theme.SecondaryColor) -- Initial contrast check
-
     btn.MouseButton1Click:Connect(function()
         local clickTween = CreateTween(btn, {BackgroundColor3 = Config.Theme.ClickColor, Size = UDim2.new(1, -2, 0, Config.Sizes.ElementHeight - 2)}, Config.Animation.ClickDuration)
         clickTween:Play()
         clickTween.Completed:Once(function()
-            local resetTween = CreateTween(btn, {BackgroundColor3 = Config.Theme.SecondaryColor, Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)}, Config.Animation.ClickDuration)
-            resetTween:Play()
-            resetTween.Completed:Once(function()
-                updateTextContrast(Config.Theme.SecondaryColor) -- Update contrast after reset
-            end)
+            CreateTween(btn, {BackgroundColor3 = Config.Theme.SecondaryColor, Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)}, Config.Animation.ClickDuration):Play()
         end)
         if opts.Callback then opts.Callback() end
     end)
 
     btn.MouseEnter:Connect(function()
-        local hoverTween = CreateTween(btn, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration)
-        hoverTween:Play()
-        hoverTween.Completed:Once(function()
-            updateTextContrast(Config.Theme.HoverColor) -- Update contrast on hover
-        end)
+        CreateTween(btn, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration):Play()
         CreateTween(BtnGlow, {Transparency = 0.8}, Config.Animation.HoverDuration):Play()
     end)
 
     btn.MouseLeave:Connect(function()
-        local leaveTween = CreateTween(btn, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration)
-        leaveTween:Play()
-        leaveTween.Completed:Once(function()
-            updateTextContrast(Config.Theme.SecondaryColor) -- Update contrast after leaving
-        end)
+        CreateTween(btn, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
         CreateTween(BtnGlow, {Transparency = 1}, Config.Animation.HoverDuration):Play()
     end)
 
