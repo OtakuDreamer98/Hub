@@ -9,27 +9,27 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 -- Configuration
 local Config = {
     Theme = {
-        PrimaryColor = Color3.fromRGB(30, 32, 36),    -- Darker, more neutral background
-        SecondaryColor = Color3.fromRGB(40, 43, 48),  -- Subtle contrast
-        AccentColor = Color3.fromRGB(0, 136, 255),    -- Vibrant blue accent
-        HoverColor = Color3.fromRGB(50, 54, 60),      -- Smooth hover effect
-        ClickColor = Color3.fromRGB(65, 70, 78),      -- Click feedback
-        TextColor = Color3.fromRGB(230, 230, 230),    -- Clean, readable text
-        BorderColor = Color3.fromRGB(60, 65, 72),     -- Subtle borders
-        GlowColor = Color3.fromRGB(0, 136, 255),      -- Glow effect for accents
-        CornerRadius = UDim.new(0, 10),               -- Softer corners
-        ShadowTransparency = 0.6,                     -- Subtle shadow
+        PrimaryColor = Color3.fromRGB(30, 32, 36),
+        SecondaryColor = Color3.fromRGB(40, 43, 48),
+        AccentColor = Color3.fromRGB(0, 136, 255),
+        HoverColor = Color3.fromRGB(50, 54, 60),
+        ClickColor = Color3.fromRGB(65, 70, 78),
+        TextColor = Color3.fromRGB(230, 230, 230),
+        BorderColor = Color3.fromRGB(60, 65, 72),
+        GlowColor = Color3.fromRGB(0, 136, 255),
+        CornerRadius = UDim.new(0, 10),
+        ShadowTransparency = 0.6,
         Gradient = ColorSequence.new{
             ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 43, 48)),
             ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 32, 36))
         }
     },
     Animation = {
-        Duration = 0.3,
+        Duration = 0.25, -- Restored original duration for smoother feel
         HoverDuration = 0.2,
         ClickDuration = 0.15,
-        EasingStyle = Enum.EasingStyle.Quart,
-        EasingDirection = Enum.EasingDirection.Out
+        EasingStyle = Enum.EasingStyle.Sine, -- Restored original easing for familiarity
+        EasingDirection = Enum.EasingDirection.InOut
     },
     Sizes = {
         Window = {
@@ -157,7 +157,7 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
--- Window Animation
+-- Window Animation (Restored original style with enhancements)
 local function AnimateWindow(window, show)
     ClearTweens()
     local screenSize = Gui.AbsoluteSize
@@ -177,8 +177,8 @@ local function AnimateWindow(window, show)
 
     if show then
         window.Visible = true
-        window.Position = UDim2.new(0.5, 0, 0.6, 0)
-        window.Size = UDim2.new(0, targetWidth * 0.8, 0, targetHeight * 0.8)
+        window.Position = UDim2.new(0.5, 0, 0.5, 0)
+        window.Size = UDim2.new(0, 0, 0, 0)
         window.BackgroundTransparency = 1
         CreateTween(window, {
             Position = UDim2.new(0.5, -targetWidth/2, 0.5, -targetHeight/2),
@@ -187,8 +187,8 @@ local function AnimateWindow(window, show)
         }):Play()
     else
         local tween = CreateTween(window, {
-            Size = UDim2.new(0, targetWidth * 0.8, 0, targetHeight * 0.8),
-            Position = UDim2.new(0.5, 0, 0.6, 0),
+            Size = UDim2.new(0, 0, 0, 0),
+            Position = UDim2.new(0.5, 0, 0.5, 0),
             BackgroundTransparency = 1
         })
         tween:Play()
@@ -407,7 +407,7 @@ function Fluxcore:MakeWindow(config)
             btn.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
             btn.Text = (opts.Name or "Button"):gsub("%s+$", "")
             btn.BackgroundColor3 = Config.Theme.SecondaryColor
-            btn.TextColor3 = Config.Theme.TextColor
+            btn.TextColor3 = Config.Theme.TextColor -- Fixed to use TextColor for visibility
             btn.Font = Enum.Font.GothamSemibold
             btn.TextSize = 14
             btn.TextXAlignment = Enum.TextXAlignment.Left
@@ -499,7 +499,7 @@ function Fluxcore:MakeWindow(config)
             ApplyStyle(dropdownFrame, UDim.new(0, 8), false, true)
 
             local dropdownButton = Instance.new("TextButton", dropdownFrame)
-            dropdownButton.Size = UDim2.new(1, 0, 1, 0)
+            dropdownButton.Size = UDim2.new(1, -30, 1, 0)
             dropdownButton.BackgroundTransparency = 1
             dropdownButton.Text = (opts.Name or "Select Option"):gsub("%s+$", "")
             dropdownButton.TextColor3 = Config.Theme.TextColor
@@ -510,6 +510,17 @@ function Fluxcore:MakeWindow(config)
             dropdownButton.ClipsDescendants = true
             local btnPadding = Instance.new("UIPadding", dropdownButton)
             btnPadding.PaddingLeft = UDim.new(0, 12)
+
+            -- Add dropdown arrow
+            local arrow = Instance.new("ImageLabel", dropdownFrame)
+            arrow.Size = UDim2.new(0, 20, 0, 20)
+            arrow.Position = UDim2.new(1, -25, 0.5, -10)
+            arrow.BackgroundTransparency = 1
+            arrow.Image = "rbxassetid://3926305904" -- Roblox arrow icon
+            arrow.ImageRectOffset = Vector2.new(764, 124)
+            arrow.ImageRectSize = Vector2.new(36, 36)
+            arrow.ImageColor3 = Config.Theme.TextColor
+            arrow.Rotation = 0
 
             local dropdownList = Instance.new("Frame", Content)
             dropdownList.Size = UDim2.new(1, 0, 0, 0)
@@ -527,14 +538,17 @@ function Fluxcore:MakeWindow(config)
                 dropdownList.Visible = expanded
                 dropdownList.Size = expanded and UDim2.new(1, 0, 0, #opts.Options * Config.Sizes.ElementHeight) or UDim2.new(1, 0, 0, 0)
                 CreateTween(dropdownList, {BackgroundTransparency = expanded and 0 or 1}, Config.Animation.HoverDuration):Play()
+                CreateTween(arrow, {Rotation = expanded and 180 or 0}, Config.Animation.HoverDuration):Play()
             end
 
             dropdownButton.MouseButton1Click:Connect(toggleDropdown)
             dropdownButton.MouseEnter:Connect(function()
                 CreateTween(dropdownFrame, {BackgroundColor3 = Config.Theme.HoverColor}, Config.Animation.HoverDuration):Play()
+                CreateTween(arrow, {ImageColor3 = Config.Theme.AccentColor}, Config.Animation.HoverDuration):Play()
             end)
             dropdownButton.MouseLeave:Connect(function()
                 CreateTween(dropdownFrame, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+                CreateTween(arrow, {ImageColor3 = Config.Theme.TextColor}, Config.Animation.HoverDuration):Play()
             end)
 
             for _, option in ipairs(opts.Options or {}) do
