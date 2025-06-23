@@ -25,10 +25,10 @@ local Config = {
         }
     },
     Animation = {
-        Duration = 0.25, -- Restored original duration for smoother feel
+        Duration = 0.25,
         HoverDuration = 0.2,
         ClickDuration = 0.15,
-        EasingStyle = Enum.EasingStyle.Sine, -- Restored original easing for familiarity
+        EasingStyle = Enum.EasingStyle.Sine,
         EasingDirection = Enum.EasingDirection.InOut
     },
     Sizes = {
@@ -157,7 +157,7 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
--- Window Animation (Restored original style with enhancements)
+-- Window Animation
 local function AnimateWindow(window, show)
     ClearTweens()
     local screenSize = Gui.AbsoluteSize
@@ -407,15 +407,21 @@ function Fluxcore:MakeWindow(config)
             btn.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
             btn.Text = (opts.Name or "Button"):gsub("%s+$", "")
             btn.BackgroundColor3 = Config.Theme.SecondaryColor
-            btn.TextColor3 = Config.Theme.TextColor -- Fixed to use TextColor for visibility
+            btn.TextColor3 = Config.Theme.TextColor
             btn.Font = Enum.Font.GothamSemibold
-            btn.TextSize = 14
+            btn.TextSize = 15 -- Increased for better readability
             btn.TextXAlignment = Enum.TextXAlignment.Left
             btn.TextTruncate = Enum.TextTruncate.AtEnd
             btn.ClipsDescendants = true
             local btnPadding = Instance.new("UIPadding", btn)
             btnPadding.PaddingLeft = UDim.new(0, 12)
             ApplyStyle(btn, UDim.new(0, 8), false, true)
+
+            -- Add outline for button
+            local BtnOutline = Instance.new("UIStroke", btn)
+            BtnOutline.Thickness = 1
+            BtnOutline.Color = Config.Theme.BorderColor
+            BtnOutline.Transparency = 0.8
 
             local BtnGlow = Instance.new("UIStroke", btn)
             BtnGlow.Thickness = 2
@@ -511,12 +517,12 @@ function Fluxcore:MakeWindow(config)
             local btnPadding = Instance.new("UIPadding", dropdownButton)
             btnPadding.PaddingLeft = UDim.new(0, 12)
 
-            -- Add dropdown arrow
+            -- Dropdown arrow
             local arrow = Instance.new("ImageLabel", dropdownFrame)
             arrow.Size = UDim2.new(0, 20, 0, 20)
             arrow.Position = UDim2.new(1, -25, 0.5, -10)
             arrow.BackgroundTransparency = 1
-            arrow.Image = "rbxassetid://3926305904" -- Roblox arrow icon
+            arrow.Image = "rbxassetid://3926305904"
             arrow.ImageRectOffset = Vector2.new(764, 124)
             arrow.ImageRectSize = Vector2.new(36, 36)
             arrow.ImageColor3 = Config.Theme.TextColor
@@ -750,13 +756,13 @@ end
 -- Notification System
 function Fluxcore:MakeNotification(data)
     local msg = Instance.new("TextLabel", Gui)
-    msg.Size = UDim2.new(0, 280, 0, 60)
+    msg.Size = UDim2.new(0, 270, 0, 60)
     msg.Position = UDim2.new(1, 10, 1, -70 - (#Windows * 70))
     msg.Text = (data.Content or "Notification"):gsub("%s+$", "")
     msg.BackgroundColor3 = data.Type == "error" and Color3.fromRGB(220, 60, 60) or Color3.fromRGB(60, 170, 60)
     msg.TextColor3 = Config.Theme.TextColor
-    msg.Font = Enum.Font.GothamMedium
-    msg.TextSize = 14
+    msg.Font = Enum.Font.GothamSemibold -- Bolder font for better readability
+    msg.TextSize = 15 -- Increased for visibility
     msg.TextWrapped = true
     msg.TextXAlignment = Enum.TextXAlignment.Left
     msg.TextYAlignment = Enum.TextYAlignment.Center
@@ -767,13 +773,20 @@ function Fluxcore:MakeNotification(data)
     msgPadding.PaddingRight = UDim.new(0, 12)
     ApplyStyle(msg, UDim.new(0, 12), true, true)
 
+    -- Add text stroke for better contrast
+    local textStroke = Instance.new("UIStroke", msg)
+    textStroke.Thickness = 0.5
+    textStroke.Color = Color3.fromRGB(0, 0, 0)
+    textStroke.Transparency = 0.5
+    textStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+
     local msgGlow = Instance.new("UIStroke", msg)
     msgGlow.Thickness = 3
     msgGlow.Color = data.Type == "error" and Color3.fromRGB(220, 60, 60) or Color3.fromRGB(60, 170, 60)
     msgGlow.Transparency = 0.8
     msgGlow.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
 
-    local tweenIn = CreateTween(msg, {Position = UDim2.new(1, -290, 1, -70 - (#Windows * 70))}, 0.5)
+    local tweenIn = CreateTween(msg, {Position = UDim2.new(1, -280, 1, -70 - (#Windows * 70))}, 0.5)
     tweenIn:Play()
     tweenIn.Completed:Once(function()
         wait(data.Time or 3)
