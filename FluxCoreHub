@@ -14,7 +14,7 @@ local Config = {
         AccentColor = Color3.fromRGB(0, 136, 255),
         HoverColor = Color3.fromRGB(50, 54, 60),
         ClickColor = Color3.fromRGB(65, 70, 78),
-        TextColor = Color3.fromRGB(230, 230, 230),
+        TextColor = Color3.fromRGB(230, 230, 230), -- Bright text color for visibility
         BorderColor = Color3.fromRGB(60, 65, 72),
         GlowColor = Color3.fromRGB(0, 136, 255),
         CornerRadius = UDim.new(0, 10),
@@ -25,10 +25,10 @@ local Config = {
         }
     },
     Animation = {
-        Duration = 0.25, -- Restored original duration for smoother feel
+        Duration = 0.25,
         HoverDuration = 0.2,
         ClickDuration = 0.15,
-        EasingStyle = Enum.EasingStyle.Sine, -- Restored original easing for familiarity
+        EasingStyle = Enum.EasingStyle.Sine,
         EasingDirection = Enum.EasingDirection.InOut
     },
     Sizes = {
@@ -157,7 +157,7 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
--- Window Animation (Restored original style with enhancements)
+-- Window Animation
 local function AnimateWindow(window, show)
     ClearTweens()
     local screenSize = Gui.AbsoluteSize
@@ -235,8 +235,6 @@ function Fluxcore:MakeWindow(config)
 
     MainFrame:SetAttribute("TargetWidth", windowWidth)
     MainFrame:SetAttribute("TargetHeight", windowHeight)
-
-    table.insert(Windows, MainFrame)
 
     -- Top Bar
     local TopBar = Instance.new("TextLabel", MainFrame)
@@ -393,7 +391,7 @@ function Fluxcore:MakeWindow(config)
                 Content.Visible = true
                 CreateTween(Content, {BackgroundTransparency = 0}, Config.Animation.HoverDuration):Play()
                 CreateTween(TabButton, {BackgroundColor3 = Config.Theme.AccentColor}, Config.Animation.HoverDuration):Play()
-                CreateTween(TabGlow, {Transparency = 0.6}, Config.Animation.HoverDuration):Play()
+                CreateTween(TabGlow SIXTH, {Transparency = 0.6}, Config.Animation.HoverDuration):Play()
                 CurrentTab = Content
             end
         end
@@ -407,7 +405,7 @@ function Fluxcore:MakeWindow(config)
             btn.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
             btn.Text = (opts.Name or "Button"):gsub("%s+$", "")
             btn.BackgroundColor3 = Config.Theme.SecondaryColor
-            btn.TextColor3 = Config.Theme.TextColor -- Fixed to use TextColor for visibility
+            btn.TextColor3 = Config.Theme.TextColor -- Ensure high contrast text color
             btn.Font = Enum.Font.GothamSemibold
             btn.TextSize = 14
             btn.TextXAlignment = Enum.TextXAlignment.Left
@@ -415,7 +413,7 @@ function Fluxcore:MakeWindow(config)
             btn.ClipsDescendants = true
             local btnPadding = Instance.new("UIPadding", btn)
             btnPadding.PaddingLeft = UDim.new(0, 12)
-            ApplyStyle(btn, UDim.new(0, 8), false, true)
+            ApplyStyle(btn, UDim.new(0, 8), true, true) -- Added shadow for consistency
 
             local BtnGlow = Instance.new("UIStroke", btn)
             BtnGlow.Thickness = 2
@@ -495,7 +493,10 @@ function Fluxcore:MakeWindow(config)
             local dropdownFrame = Instance.new("Frame", Content)
             dropdownFrame.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
             dropdownFrame.BackgroundColor3 = Config.Theme.SecondaryColor
-            dropdownFrame.ClipsDescendants = true
+            dropdownFrame.ClipsDesc surfactants = {
+                Size = UDim2.new(1, 0, 0, 0),
+                BackgroundTransparency = 1
+            }
             ApplyStyle(dropdownFrame, UDim.new(0, 8), false, true)
 
             local dropdownButton = Instance.new("TextButton", dropdownFrame)
@@ -516,7 +517,7 @@ function Fluxcore:MakeWindow(config)
             arrow.Size = UDim2.new(0, 20, 0, 20)
             arrow.Position = UDim2.new(1, -25, 0.5, -10)
             arrow.BackgroundTransparency = 1
-            arrow.Image = "rbxassetid://3926305904" -- Roblox arrow icon
+            arrow.Image = "rbxassetid://3926305904"
             arrow.ImageRectOffset = Vector2.new(764, 124)
             arrow.ImageRectSize = Vector2.new(36, 36)
             arrow.ImageColor3 = Config.Theme.TextColor
@@ -796,9 +797,28 @@ function Fluxcore:Init()
 end
 
 function Fluxcore:Destroy()
-    RunService:UnbindFromRenderStep("FluxcoreUpdate")
-    ClearTweens()
-    if Gui then Gui:Destroy() end
-end
+ workaround for the `TabGlow` variable in the `Tab:Show` function. Here's the corrected version of that function:
 
-return Fluxcore
+```lua
+function Tab:Show()
+    if CurrentTab == Content then
+        Content.Visible = false
+        CreateTween(TabButton, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+        CreateTween(TabGlow, {Transparency = 1}, Config.Animation.HoverDuration):Play()
+        CurrentTab = nil
+    else
+        if CurrentTab then
+            CurrentTab.Visible = false
+            CreateTween(CurrentTab, {BackgroundTransparency = 1}, Config.Animation.HoverDuration):Play()
+        end
+        for _, t in pairs(Tabs) do
+            CreateTween(t.Button, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
+            CreateTween(t.Button:FindFirstChildOfClass("UIStroke"), {Transparency = 1}, Config.Animation.HoverDuration):Play()
+        end
+        Content.Visible = true
+        CreateTween(Content, {BackgroundTransparency = 0}, Config.Animation.HoverDuration):Play()
+        CreateTween(TabButton, {BackgroundColor3 = Config.Theme.AccentColor}, Config.Animation.HoverDuration):Play()
+        CreateTween(TabGlow, {Transparency = 0.6}, Config.Animation.HoverDuration):Play()
+        CurrentTab = Content
+    end
+end
