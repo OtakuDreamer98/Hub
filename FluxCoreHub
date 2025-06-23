@@ -14,7 +14,7 @@ local Config = {
         AccentColor = Color3.fromRGB(0, 136, 255),
         HoverColor = Color3.fromRGB(50, 54, 60),
         ClickColor = Color3.fromRGB(65, 70, 78),
-        TextColor = Color3.fromRGB(230, 230, 230), -- Bright text color for visibility
+        TextColor = Color3.fromRGB(230, 230, 230), -- Bright text color for high contrast
         BorderColor = Color3.fromRGB(60, 65, 72),
         GlowColor = Color3.fromRGB(0, 136, 255),
         CornerRadius = UDim.new(0, 10),
@@ -236,6 +236,8 @@ function Fluxcore:MakeWindow(config)
     MainFrame:SetAttribute("TargetWidth", windowWidth)
     MainFrame:SetAttribute("TargetHeight", windowHeight)
 
+    table.insert(Windows, MainFrame)
+
     -- Top Bar
     local TopBar = Instance.new("TextLabel", MainFrame)
     TopBar.Size = UDim2.new(1, 0, 0, 48)
@@ -391,7 +393,7 @@ function Fluxcore:MakeWindow(config)
                 Content.Visible = true
                 CreateTween(Content, {BackgroundTransparency = 0}, Config.Animation.HoverDuration):Play()
                 CreateTween(TabButton, {BackgroundColor3 = Config.Theme.AccentColor}, Config.Animation.HoverDuration):Play()
-                CreateTween(TabGlow SIXTH, {Transparency = 0.6}, Config.Animation.HoverDuration):Play()
+                CreateTween(TabGlow, {Transparency = 0.6}, Config.Animation.HoverDuration):Play()
                 CurrentTab = Content
             end
         end
@@ -409,11 +411,12 @@ function Fluxcore:MakeWindow(config)
             btn.Font = Enum.Font.GothamSemibold
             btn.TextSize = 14
             btn.TextXAlignment = Enum.TextXAlignment.Left
+            btn.TextYAlignment = Enum.TextYAlignment.Center -- Ensure text is vertically centered
             btn.TextTruncate = Enum.TextTruncate.AtEnd
             btn.ClipsDescendants = true
             local btnPadding = Instance.new("UIPadding", btn)
             btnPadding.PaddingLeft = UDim.new(0, 12)
-            ApplyStyle(btn, UDim.new(0, 8), true, true) -- Added shadow for consistency
+            ApplyStyle(btn, UDim.new(0, 8), false, true)
 
             local BtnGlow = Instance.new("UIStroke", btn)
             BtnGlow.Thickness = 2
@@ -448,6 +451,7 @@ function Fluxcore:MakeWindow(config)
             lbl.Font = Enum.Font.GothamMedium
             lbl.TextSize = 14
             lbl.TextXAlignment = Enum.TextXAlignment.Left
+            lbl.TextYAlignment = Enum.TextYAlignment.Center -- Ensure consistent alignment
             lbl.TextTruncate = Enum.TextTruncate.AtEnd
             lbl.ClipsDescendants = true
             local lblPadding = Instance.new("UIPadding", lbl)
@@ -463,6 +467,7 @@ function Fluxcore:MakeWindow(config)
             box.Font = Enum.Font.GothamMedium
             box.TextSize = 14
             box.TextXAlignment = Enum.TextXAlignment.Left
+            box.TextYAlignment = Enum.TextYAlignment.Center -- Ensure consistent alignment
             box.TextTruncate = Enum.TextTruncate.AtEnd
             box.BackgroundColor3 = Config.Theme.PrimaryColor
             box.ClipsDescendants = true
@@ -493,10 +498,7 @@ function Fluxcore:MakeWindow(config)
             local dropdownFrame = Instance.new("Frame", Content)
             dropdownFrame.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
             dropdownFrame.BackgroundColor3 = Config.Theme.SecondaryColor
-            dropdownFrame.ClipsDesc surfactants = {
-                Size = UDim2.new(1, 0, 0, 0),
-                BackgroundTransparency = 1
-            }
+            dropdownFrame.ClipsDescendants = true
             ApplyStyle(dropdownFrame, UDim.new(0, 8), false, true)
 
             local dropdownButton = Instance.new("TextButton", dropdownFrame)
@@ -507,6 +509,7 @@ function Fluxcore:MakeWindow(config)
             dropdownButton.Font = Enum.Font.GothamMedium
             dropdownButton.TextSize = 14
             dropdownButton.TextXAlignment = Enum.TextXAlignment.Left
+            dropdownButton.TextYAlignment = Enum.TextYAlignment.Center -- Ensure consistent alignment
             dropdownButton.TextTruncate = Enum.TextTruncate.AtEnd
             dropdownButton.ClipsDescendants = true
             local btnPadding = Instance.new("UIPadding", dropdownButton)
@@ -516,7 +519,7 @@ function Fluxcore:MakeWindow(config)
             local arrow = Instance.new("ImageLabel", dropdownFrame)
             arrow.Size = UDim2.new(0, 20, 0, 20)
             arrow.Position = UDim2.new(1, -25, 0.5, -10)
-            arrow.BackgroundTransparency = 1
+ arrow.BackgroundTransparency = 1
             arrow.Image = "rbxassetid://3926305904"
             arrow.ImageRectOffset = Vector2.new(764, 124)
             arrow.ImageRectSize = Vector2.new(36, 36)
@@ -561,6 +564,7 @@ function Fluxcore:MakeWindow(config)
                 optionButton.Font = Enum.Font.Gotham
                 optionButton.TextSize = 14
                 optionButton.TextXAlignment = Enum.TextXAlignment.Left
+                optionButton.TextYAlignment = Enum.TextYAlignment.Center -- Ensure consistent alignment
                 optionButton.TextTruncate = Enum.TextTruncate.AtEnd
                 optionButton.ClipsDescendants = true
                 local optPadding = Instance.new("UIPadding", optionButton)
@@ -596,6 +600,7 @@ function Fluxcore:MakeWindow(config)
             titleLabel.Font = Enum.Font.GothamMedium
             titleLabel.TextSize = 14
             titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+            titleLabel.TextYAlignment = Enum.TextYAlignment.Center -- Ensure consistent alignment
             titleLabel.TextTruncate = Enum.TextTruncate.AtEnd
             titleLabel.ClipsDescendants = true
 
@@ -618,6 +623,7 @@ function Fluxcore:MakeWindow(config)
             valueLabel.TextColor3 = Config.Theme.TextColor
             valueLabel.Font = Enum.Font.Gotham
             valueLabel.TextSize = 13
+            valueLabel.TextYAlignment = Enum.TextYAlignment.Center -- Ensure consistent alignment
             valueLabel.Text = string.format("%.2f", opts.Default or opts.Min or 0)
             valueLabel.TextTruncate = Enum.TextTruncate.AtEnd
 
@@ -657,7 +663,8 @@ function Fluxcore:MakeWindow(config)
             toggleFrame.Size = UDim2.new(1, 0, 0, Config.Sizes.ElementHeight)
             toggleFrame.BackgroundColor3 = Config.Theme.SecondaryColor
             toggleFrame.ClipsDescendants = true
-            ApplyStyle(toggleFrame, UDim.new(0, 8), false, true)
+            ApplyStyle(toggleFrame, UDim.new(0,  ggplot2
+8), false, true)
 
             local toggleButton = Instance.new("TextButton", toggleFrame)
             toggleButton.Size = UDim2.new(1, 0, 1, 0)
@@ -667,6 +674,7 @@ function Fluxcore:MakeWindow(config)
             toggleButton.Font = Enum.Font.GothamMedium
             toggleButton.TextSize = 14
             toggleButton.TextXAlignment = Enum.TextXAlignment.Left
+            toggleButton.TextYAlignment = Enum.TextYAlignment.Center -- Ensure consistent alignment
             toggleButton.TextTruncate = Enum.TextTruncate.AtEnd
             toggleButton.ClipsDescendants = true
             local btnPadding = Instance.new("UIPadding", toggleButton)
@@ -681,7 +689,8 @@ function Fluxcore:MakeWindow(config)
             local toggleInner = Instance.new("Frame", toggleIndicator)
             toggleInner.Size = UDim2.new(0.45, 0, 0.8, 0)
             toggleInner.Position = UDim2.new(0.05, 0, 0.1, 0)
-            toggleInner.BackgroundColor3 = Config.Theme.TextColor
+            toggle lo
+toggleInner.BackgroundColor3 = Config.Theme.TextColor
             ApplyStyle(toggleInner, UDim.new(1, 0))
 
             local state = opts.Default or false
@@ -721,6 +730,7 @@ function Fluxcore:MakeWindow(config)
             displayLabel.Font = Enum.Font.GothamMedium
             displayLabel.TextSize = 14
             displayLabel.TextXAlignment = Enum.TextXAlignment.Left
+            displayLabel.TextYAlignment = Enum.TextYAlignment.Center -- Ensure consistent alignment
             displayLabel.TextTruncate = Enum.TextTruncate.AtEnd
             displayLabel.ClipsDescendants = true
             local lblPadding = Instance.new("UIPadding", displayLabel)
@@ -732,10 +742,6 @@ function Fluxcore:MakeWindow(config)
             displayFrame.MouseLeave:Connect(function()
                 CreateTween(displayFrame, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
             end)
-
-            local connections = {}
-            table.insert(connections, displayFrame.MouseEnter)
-            table.insert(connections, displayFrame.MouseLeave)
 
             return displayLabel
         end
@@ -797,28 +803,9 @@ function Fluxcore:Init()
 end
 
 function Fluxcore:Destroy()
- workaround for the `TabGlow` variable in the `Tab:Show` function. Here's the corrected version of that function:
-
-```lua
-function Tab:Show()
-    if CurrentTab == Content then
-        Content.Visible = false
-        CreateTween(TabButton, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
-        CreateTween(TabGlow, {Transparency = 1}, Config.Animation.HoverDuration):Play()
-        CurrentTab = nil
-    else
-        if CurrentTab then
-            CurrentTab.Visible = false
-            CreateTween(CurrentTab, {BackgroundTransparency = 1}, Config.Animation.HoverDuration):Play()
-        end
-        for _, t in pairs(Tabs) do
-            CreateTween(t.Button, {BackgroundColor3 = Config.Theme.SecondaryColor}, Config.Animation.HoverDuration):Play()
-            CreateTween(t.Button:FindFirstChildOfClass("UIStroke"), {Transparency = 1}, Config.Animation.HoverDuration):Play()
-        end
-        Content.Visible = true
-        CreateTween(Content, {BackgroundTransparency = 0}, Config.Animation.HoverDuration):Play()
-        CreateTween(TabButton, {BackgroundColor3 = Config.Theme.AccentColor}, Config.Animation.HoverDuration):Play()
-        CreateTween(TabGlow, {Transparency = 0.6}, Config.Animation.HoverDuration):Play()
-        CurrentTab = Content
-    end
+    RunService:UnbindFromRenderStep("FluxcoreUpdate")
+    ClearTweens()
+    if Gui then Gui:Destroy() end
 end
+
+return Fluxcore
